@@ -1,0 +1,26 @@
+import { StyleSheet, View } from 'react-native';
+import { theme } from '../theme/theme';
+
+export default function ProgressBar({ value = 0, max = 1 }) {
+  const safeMax = Math.max(1, max);
+  const ratio = Math.max(0, Math.min(1, value / safeMax));
+
+  return (
+    <View style={styles.track}>
+      <View style={[styles.fill, { width: `${ratio * 100}%` }]} />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  track: {
+    height: 10,
+    borderRadius: theme.radius.pill,
+    backgroundColor: theme.colors.progressTrack,
+    overflow: 'hidden',
+  },
+  fill: {
+    height: '100%',
+    backgroundColor: theme.colors.primaryStrong,
+  },
+});
