@@ -9,6 +9,7 @@ import {
 } from './tokenStorage';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+const DEV_TIME_KEY = process.env.EXPO_PUBLIC_DEV_TIME_KEY || '';
 
 if (__DEV__) {
   console.log('[api] baseURL:', API_BASE_URL);
@@ -29,6 +30,13 @@ apiClient.interceptors.request.use((config) => {
   const token = getAccessToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+  const debugDate = getAsOfDateParam();
+  if (debugDate) {
+    config.headers['X-Debug-Date'] = debugDate;
+    if (DEV_TIME_KEY) {
+      config.headers['X-Dev-Time-Key'] = DEV_TIME_KEY;
+    }
   }
   return config;
 });
@@ -127,6 +135,35 @@ export async function updateMyProfile(payload) {
   return response.data;
 }
 
+// Anchors
+export async function getAnchors() {
+  const response = await apiClient.get('/anchors');
+  return response.data;
+}
+
+export async function updateAnchors(payload) {
+  const response = await apiClient.put('/anchors', payload);
+  return response.data;
+}
+
+// Anchor progress
+export async function getTodayAnchorProgress() {
+  const response = await apiClient.get('/anchor-progress/today');
+  return response.data;
+}
+
+export async function updateTodayAnchorProgress(payload) {
+  const response = await apiClient.patch('/anchor-progress/today', payload);
+  return response.data;
+}
+
+export async function getAnchorProgressHistory(limit = 7) {
+  const response = await apiClient.get('/anchor-progress/history', {
+    params: { limit },
+  });
+  return response.data;
+}
+
 // Daily goals
 export async function getDailyGoals() {
   const response = await apiClient.get('/daily-goals');
@@ -140,51 +177,35 @@ export async function updateDailyGoals(payload) {
 
 // Daily progress
 export async function getTodayProgress() {
-  const asOfDate = getAsOfDateParam();
-  const response = await apiClient.get('/daily-progress/today', {
-    params: asOfDate ? { asOfDate } : undefined,
-  });
+  const response = await apiClient.get('/daily-progress/today');
   return response.data;
 }
 
 export async function patchTodayProgress(payload) {
-  const asOfDate = getAsOfDateParam();
-  const response = await apiClient.patch('/daily-progress/today', payload, {
-    params: asOfDate ? { asOfDate } : undefined,
-  });
+  const response = await apiClient.patch('/daily-progress/today', payload);
   return response.data;
 }
 
 export async function completeDailyJobTask() {
-  const asOfDate = getAsOfDateParam();
-  const response = await apiClient.post('/daily-progress/complete-job-task', null, {
-    params: asOfDate ? { asOfDate } : undefined,
-  });
+  const response = await apiClient.post('/daily-progress/complete-job-task');
   return response.data;
 }
 
 export async function getDailyProgressHistory(limit = 30) {
-  const asOfDate = getAsOfDateParam();
   const response = await apiClient.get('/daily-progress/history', {
-    params: asOfDate ? { limit, asOfDate } : { limit },
+    params: { limit },
   });
   return response.data;
 }
 
-export async function recommitDiscipline() {
-  const asOfDate = getAsOfDateParam();
-  const response = await apiClient.post('/discipline/recommit', null, {
-    params: asOfDate ? { asOfDate } : undefined,
-  });
+export async function resetDiscipline() {
+  const response = await apiClient.post('/discipline/reset');
   return response.data;
 }
 
 // Sessions
 export async function createSession(payload) {
-  const asOfDate = getAsOfDateParam();
-  const response = await apiClient.post('/sessions', payload, {
-    params: asOfDate ? { asOfDate } : undefined,
-  });
+  const response = await apiClient.post('/sessions', payload);
   return response.data;
 }
 
@@ -220,6 +241,27 @@ export async function generateWeeklyReview() {
   return response.data;
 }
 
+// Dev time
+export async function getDevTime() {
+  const response = await apiClient.get('/dev/time');
+  return response.data;
+}
+
+export async function setDevTime(payload) {
+  const response = await apiClient.post('/dev/time/set', payload);
+  return response.data;
+}
+
+export async function advanceDevTime(payload) {
+  const response = await apiClient.post('/dev/time/advance', payload);
+  return response.data;
+}
+
+export async function resetDevTime() {
+  const response = await apiClient.post('/dev/time/reset');
+  return response.data;
+}
+
 export {
   apiClient,
   API_BASE_URL,
@@ -228,3 +270,5 @@ export {
   clearStoredTokens,
   getRefreshToken,
 };
+
+export const recommitDiscipline = resetDiscipline;

@@ -52,6 +52,27 @@ def create_weekly_review(
     return row
 
 
+def update_weekly_review(
+    db: Session,
+    *,
+    row: WeeklyReview,
+    days_goals_met: int,
+    longest_streak: int,
+    most_missed_area: str,
+    drift_detected: bool,
+    summary_text: str,
+) -> WeeklyReview:
+    row.days_goals_met = days_goals_met
+    row.longest_streak = longest_streak
+    row.most_missed_area = most_missed_area
+    row.drift_detected = drift_detected
+    row.summary_text = summary_text
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return row
+
+
 def get_latest_weekly_review(db: Session, *, user_id: int) -> WeeklyReview | None:
     return (
         db.query(WeeklyReview)

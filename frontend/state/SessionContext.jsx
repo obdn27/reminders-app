@@ -7,9 +7,11 @@ export function SessionProvider({ children }) {
   const [activeSession, setActiveSession] = useState(null);
   const [lastSessionResult, setLastSessionResult] = useState(null);
 
-  const startSession = ({ type, category, durationMinutes }) => {
+  const startSession = ({ type, anchorType = null, title = null, category, durationMinutes }) => {
     const session = {
       type,
+      anchorType,
+      title,
       category,
       durationMinutes,
       startTimeIso: getNowIso(),
@@ -18,11 +20,11 @@ export function SessionProvider({ children }) {
     return session;
   };
 
-  const startFocusSession = ({ category, durationMinutes }) =>
-    startSession({ type: 'focus', category, durationMinutes });
+  const startFocusSession = ({ anchorType = 'deep_work', title = 'Deep work', category, durationMinutes }) =>
+    startSession({ type: 'focus', anchorType, title, category, durationMinutes });
 
-  const startMovementSession = ({ category, durationMinutes }) =>
-    startSession({ type: 'movement', category, durationMinutes });
+  const startMovementSession = ({ anchorType = 'movement', title = 'Movement', category, durationMinutes }) =>
+    startSession({ type: 'movement', anchorType, title, category, durationMinutes });
 
   const abandonActiveSession = () => {
     setActiveSession(null);
@@ -31,6 +33,8 @@ export function SessionProvider({ children }) {
   const completeActiveSession = ({ completedMinutes }) => {
     const result = {
       type: activeSession?.type || 'focus',
+      anchorType: activeSession?.anchorType || null,
+      title: activeSession?.title || null,
       category: activeSession?.category || 'session',
       plannedMinutes: activeSession?.durationMinutes || completedMinutes,
       completedMinutes,

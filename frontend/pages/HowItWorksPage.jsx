@@ -36,7 +36,7 @@ export default function HowItWorksPage() {
       />
       <Step
         title="4. Receive reminder states"
-        body="If consistency drops, reminder/check-in states escalate from light reminders to recommit prompts."
+        body="If consistency drops, the app distinguishes fragile days from real drift and prompts you to steady or start again."
       />
       <Step
         title="5. Review weekly consistency"

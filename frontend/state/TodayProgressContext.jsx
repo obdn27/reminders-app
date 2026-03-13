@@ -3,7 +3,7 @@ import {
   completeDailyJobTask,
   getTodayProgress,
   patchTodayProgress,
-  recommitDiscipline,
+  resetDiscipline,
 } from '../services/api';
 
 const TodayProgressContext = createContext(null);
@@ -59,10 +59,10 @@ export function TodayProgressProvider({ children }) {
     }
   };
 
-  const recommit = async () => {
+  const resetFromToday = async () => {
     setLoadingTodayProgress(true);
     try {
-      const result = await recommitDiscipline();
+      const result = await resetDiscipline();
       setTodayProgress(result.dailyProgress || null);
       setRuleState(result.ruleState || null);
       return result;
@@ -80,7 +80,7 @@ export function TodayProgressProvider({ children }) {
       updateTodayProgress,
       markDailyJobTaskComplete,
       applySessionResult,
-      recommit,
+      resetFromToday,
     }),
     [todayProgress, ruleState, loadingTodayProgress]
   );

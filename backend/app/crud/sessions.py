@@ -11,6 +11,7 @@ def create_session_record(
     *,
     user_id: int,
     session_type: str,
+    anchor_type: str | None,
     category: str,
     planned_minutes: int,
     completed_minutes: int,
@@ -18,6 +19,7 @@ def create_session_record(
     record = SessionRecord(
         user_id=user_id,
         session_type=session_type,
+        anchor_type=anchor_type,
         category=category,
         planned_minutes=planned_minutes,
         completed_minutes=completed_minutes,

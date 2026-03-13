@@ -12,6 +12,7 @@ def _to_user_response(user: User) -> dict:
         'id': user.id,
         'email': user.email,
         'name': user.name,
+        'goalContext': user.goal_context,
         'timezone': user.timezone,
         'tonePreference': user.tone_preference,
         'sprintModeEnabled': user.sprint_mode_enabled,

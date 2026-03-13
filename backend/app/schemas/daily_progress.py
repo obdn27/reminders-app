@@ -4,9 +4,12 @@ from pydantic import BaseModel, Field
 
 
 class RuleStateResponse(BaseModel):
+    dailyClassification: str
+    stabilityState: str
     reminderState: str | None = None
     missStreak: int
     driftFlags: list[str]
+    completionRate: int
 
 
 class DailyProgressResponse(BaseModel):
@@ -19,9 +22,12 @@ class DailyProgressResponse(BaseModel):
     goalsMetCount: int
     totalGoalsCount: int
     overallStatus: str
+    dailyClassification: str | None = None
+    stabilityState: str | None = None
     reminderState: str | None = None
     driftFlags: list[str]
     missStreak: int
+    completionRate: int = 0
     createdAt: datetime
     updatedAt: datetime
 

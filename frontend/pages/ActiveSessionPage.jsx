@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { StyleSheet, Text } from 'react-native';
-import Card from '../components/Card';
+import { StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Svg, { Circle } from 'react-native-svg';
 import PrimaryButton from '../components/PrimaryButton';
-import ScreenContainer from '../components/ScreenContainer';
 import { createSession } from '../services/api';
 import { endSessionLiveActivity, startSessionLiveActivity, updateSessionLiveActivity } from '../services/liveActivities';
+import { useAnchorProgress } from '../state/AnchorProgressContext';
 import { useDebugTime } from '../state/DebugTimeContext';
 import { useReminders } from '../state/ReminderContext';
 import { getNowIso, getNowMs, getTimerSpeed } from '../services/timeMachine';
@@ -21,9 +22,50 @@ function formatTime(seconds) {
   return `${mm}:${ss}`;
 }
 
+function TimerRing({ progress = 0, children }) {
+  const size = 264;
+  const strokeWidth = 16;
+  const center = size / 2;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const clamped = Math.max(0, Math.min(1, progress));
+  const dashOffset = circumference * (1 - clamped);
+
+  return (
+    <View style={styles.ringWrap}>
+      <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <Circle
+          cx={center}
+          cy={center}
+          r={radius}
+          stroke={theme.colors.borderSoft}
+          strokeWidth={strokeWidth}
+          fill="none"
+          opacity={0.45}
+        />
+        <Circle
+          cx={center}
+          cy={center}
+          r={radius}
+          stroke={theme.colors.primary}
+          strokeWidth={strokeWidth}
+          fill="none"
+          strokeDasharray={`${circumference} ${circumference}`}
+          strokeDashoffset={dashOffset}
+          strokeLinecap="round"
+          rotation="-90"
+          origin={`${center}, ${center}`}
+        />
+      </Svg>
+      <View style={styles.ringContent}>{children}</View>
+    </View>
+  );
+}
+
 export default function ActiveSessionPage({ navigation }) {
   const { activeSession, abandonActiveSession, completeActiveSession, setLastSessionResult } =
     useSessionState();
+  const { applyAnchorProgress, refreshTodayAnchors } = useAnchorProgress();
   const { applySessionResult, refreshTodayProgress } = useTodayProgress();
   const { refreshLatestReminder } = useReminders();
   const { timerSpeed } = useDebugTime();
@@ -69,17 +111,27 @@ export default function ActiveSessionPage({ navigation }) {
 
   if (!activeSession) {
     return (
-      <ScreenContainer>
-        <Card>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+        <View style={styles.emptyState}>
           <Text style={styles.title}>No active session</Text>
           <Text style={styles.copy}>Start a new session from Home.</Text>
-        </Card>
-        <PrimaryButton title="Back home" onPress={() => goBackOrNavigateHome(navigation)} />
-      </ScreenContainer>
+          <PrimaryButton
+            title="Back home"
+            onPress={() => goBackOrNavigateHome(navigation)}
+            style={styles.actionButton}
+          />
+        </View>
+      </SafeAreaView>
     );
   }
 
-  const sessionLabel = activeSession.type === 'movement' ? 'Movement Session' : 'Focus Session';
+  const sessionLabel =
+    activeSession.title
+      ? `${activeSession.title} Session`
+      : activeSession.type === 'movement'
+        ? 'Movement Session'
+        : 'Focus Session';
+  const progress = initialSeconds > 0 ? (initialSeconds - secondsLeft) / initialSeconds : 0;
 
   const onComplete = async () => {
     const plannedSeconds = initialSeconds;
@@ -94,6 +146,7 @@ export default function ActiveSessionPage({ navigation }) {
     try {
       const payload = {
         type: activeSession.type,
+        anchorType: activeSession.anchorType,
         category: activeSession.category,
         plannedMinutes: activeSession.durationMinutes,
         completedMinutes,
@@ -101,11 +154,14 @@ export default function ActiveSessionPage({ navigation }) {
       };
       const result = await createSession(payload);
       applySessionResult(result);
+      applyAnchorProgress(result.anchorProgress);
       await refreshTodayProgress();
+      await refreshTodayAnchors();
       await refreshLatestReminder();
       setLastSessionResult({
         ...draft,
         type: result?.session?.type || draft.type,
+        anchorType: result?.session?.anchorType || draft.anchorType,
         category: result?.session?.category || draft.category,
         plannedMinutes: result?.session?.plannedMinutes || draft.plannedMinutes,
         completedMinutes: result?.session?.completedMinutes || draft.completedMinutes,
@@ -123,47 +179,99 @@ export default function ActiveSessionPage({ navigation }) {
   };
 
   return (
-    <ScreenContainer>
-      <Card style={styles.card}>
-        <Text style={styles.title}>{sessionLabel}</Text>
-        <Text style={styles.category}>{activeSession.category.toUpperCase()}</Text>
-        <Text style={styles.timer}>{formatTime(secondsLeft)}</Text>
-        <Text style={styles.copy}>Stay present. One block at a time.</Text>
-      </Card>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+      <View style={styles.container}>
+        <View style={styles.sessionMeta}>
+          <Text style={styles.title}>{sessionLabel}</Text>
+          <Text style={styles.category}>{String(activeSession.category || '').toUpperCase()}</Text>
+        </View>
 
-      <PrimaryButton
-        title={secondsLeft === 0 ? 'Complete session' : 'Finish early'}
-        onPress={onComplete}
-      />
-      <PrimaryButton variant="secondary" title="Abandon" onPress={onAbandon} />
-    </ScreenContainer>
+        <View style={styles.centerStage}>
+          <TimerRing progress={progress}>
+            <Text style={styles.timer}>{formatTime(secondsLeft)}</Text>
+          </TimerRing>
+        </View>
+
+        <View style={styles.footer}>
+          <PrimaryButton
+            title={secondsLeft === 0 ? 'Complete session' : 'Finish early'}
+            onPress={onComplete}
+            style={styles.footerActionButton}
+          />
+          <PrimaryButton
+            variant="secondary"
+            title="Abandon"
+            onPress={onAbandon}
+            style={styles.footerActionButton}
+          />
+        </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
+  safeArea: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  container: {
+    flex: 1,
+    paddingHorizontal: theme.spacing.xl,
+    paddingTop: theme.spacing.lg,
+    paddingBottom: theme.spacing.xl,
+  },
+  emptyState: {
+    flex: 1,
+    paddingHorizontal: theme.spacing.xl,
     alignItems: 'center',
-    paddingVertical: 24,
-    gap: 8,
+    justifyContent: 'center',
+    gap: theme.spacing.md,
+  },
+  sessionMeta: {
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+    paddingTop: theme.spacing.sm,
+  },
+  centerStage: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ringWrap: {
+    width: 264,
+    height: 264,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ringContent: {
+    position: 'absolute',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  footer: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+    paddingTop: theme.spacing.md,
+  },
+  footerActionButton: {
+    flex: 1,
+    minHeight: 54,
   },
   title: {
-    fontSize: 24,
-    fontWeight: '800',
+    ...theme.typography.hero,
     color: theme.colors.textPrimary,
   },
   category: {
-    fontSize: 13,
+    ...theme.typography.caption,
     letterSpacing: 1,
-    color: theme.colors.textMuted,
+    color: theme.colors.textSecondary,
     fontWeight: '700',
+    textTransform: 'uppercase',
   },
   timer: {
-    fontSize: 56,
+    fontSize: 54,
     fontWeight: '800',
-    color: theme.colors.primaryStrong,
-  },
-  copy: {
-    fontSize: 15,
-    color: theme.colors.textSecondary,
+    color: theme.colors.textPrimary,
   },
 });

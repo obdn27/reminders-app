@@ -4,6 +4,7 @@ import Card from '../components/Card';
 import PrimaryButton from '../components/PrimaryButton';
 import ScreenContainer from '../components/ScreenContainer';
 import { useAuth } from '../context/AuthContext';
+import { extractApiErrorMessage } from '../services/apiErrors';
 import { theme } from '../theme/theme';
 
 export default function SignInPage({ navigation }) {
@@ -15,11 +16,17 @@ export default function SignInPage({ navigation }) {
 
   const onSubmit = async () => {
     setError('');
+    const nextEmail = email.trim().toLowerCase();
+    if (!nextEmail || !password) {
+      setError('Email and password are required.');
+      return;
+    }
+
     setLoading(true);
     try {
-      await login({ email: email.trim(), password });
+      await login({ email: nextEmail, password });
     } catch (err) {
-      setError(err?.response?.data?.detail || 'Login failed. Please try again.');
+      setError(extractApiErrorMessage(err, 'Login failed. Please try again.'));
     } finally {
       setLoading(false);
     }

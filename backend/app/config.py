@@ -17,6 +17,7 @@ class Settings(BaseSettings):
 
     CORS_ALLOW_ORIGINS: str = '*'
     SCHEDULER_ENABLED: bool = True
+    DEV_TIME_TRAVEL_KEY: str = 'local-seed-key-2026-03-13'
 
 
 settings = Settings()

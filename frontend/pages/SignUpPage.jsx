@@ -4,6 +4,7 @@ import Card from '../components/Card';
 import PrimaryButton from '../components/PrimaryButton';
 import ScreenContainer from '../components/ScreenContainer';
 import { useAuth } from '../context/AuthContext';
+import { extractApiErrorMessage } from '../services/apiErrors';
 import { theme } from '../theme/theme';
 
 export default function SignUpPage({ navigation }) {
@@ -16,11 +17,20 @@ export default function SignUpPage({ navigation }) {
 
   const onSubmit = async () => {
     setError('');
+    const nextEmail = email.trim().toLowerCase();
+    if (!nextEmail) {
+      setError('Email is required.');
+      return;
+    }
+    if (!password) {
+      setError('Password is required.');
+      return;
+    }
     setLoading(true);
     try {
-      await signup({ email: email.trim(), password, name: name.trim() || null });
+      await signup({ email: nextEmail, password, name: name.trim() || null });
     } catch (err) {
-      setError(err?.response?.data?.detail || 'Signup failed. Please try again.');
+      setError(extractApiErrorMessage(err, 'Signup failed. Please try again.'));
     } finally {
       setLoading(false);
     }

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.db import get_db
@@ -22,7 +22,14 @@ def signup_route(payload: SignupRequest, db: Session = Depends(get_db)):
 
 @router.post('/login', response_model=LoginResponse)
 def login_route(payload: LoginRequest, db: Session = Depends(get_db)):
-    return authenticate_user(db, email=payload.email, password=payload.password)
+    email = payload.email.strip().lower()
+    password = payload.password
+    if not email or not password:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail='Email and password are required',
+        )
+    return authenticate_user(db, email=email, password=password)
 
 
 @router.post('/refresh', response_model=TokenResponse)

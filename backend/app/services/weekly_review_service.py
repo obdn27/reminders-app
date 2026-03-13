@@ -8,6 +8,7 @@ from app.crud.weekly_reviews import (
     get_latest_weekly_review,
     get_weekly_review_for_range,
     get_weekly_review_history,
+    update_weekly_review,
 )
 from app.services.llm_service import generate_weekly_summary_template
 from app.models.user import User
@@ -70,8 +71,6 @@ def generate_weekly_review_for_user(
         week_start_date=week_start_date,
         week_end_date=week_end_date,
     )
-    if existing:
-        return _to_response(existing)
 
     rows = get_daily_progress_in_range(
         db,
@@ -91,22 +90,42 @@ def generate_weekly_review_for_user(
         drift_detected=drift_detected,
     )
 
-    created = create_weekly_review(
-        db,
-        user_id=user.id,
-        week_start_date=week_start_date,
-        week_end_date=week_end_date,
-        days_goals_met=days_goals_met,
-        longest_streak=longest_streak,
-        most_missed_area=most_missed_area,
-        drift_detected=drift_detected,
-        summary_text=summary_text,
-    )
-    return _to_response(created)
+    if existing:
+        review = update_weekly_review(
+            db,
+            row=existing,
+            days_goals_met=days_goals_met,
+            longest_streak=longest_streak,
+            most_missed_area=most_missed_area,
+            drift_detected=drift_detected,
+            summary_text=summary_text,
+        )
+    else:
+        review = create_weekly_review(
+            db,
+            user_id=user.id,
+            week_start_date=week_start_date,
+            week_end_date=week_end_date,
+            days_goals_met=days_goals_met,
+            longest_streak=longest_streak,
+            most_missed_area=most_missed_area,
+            drift_detected=drift_detected,
+            summary_text=summary_text,
+        )
+    return _to_response(review)
 
 
-def latest_weekly_review(db: Session, *, user: User) -> dict | None:
-    row = get_latest_weekly_review(db, user_id=user.id)
+def latest_weekly_review(db: Session, *, user: User, week_start_date: date | None = None, week_end_date: date | None = None) -> dict | None:
+    row = None
+    if week_start_date is not None and week_end_date is not None:
+        row = get_weekly_review_for_range(
+            db,
+            user_id=user.id,
+            week_start_date=week_start_date,
+            week_end_date=week_end_date,
+        )
+    if row is None:
+        row = get_latest_weekly_review(db, user_id=user.id)
     return _to_response(row) if row else None
 
 

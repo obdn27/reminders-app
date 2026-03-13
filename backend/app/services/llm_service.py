@@ -17,12 +17,10 @@ def generate_weekly_summary_template(*, days_goals_met: int, most_missed_area: s
 
 def generate_reminder_copy_template(*, reminder_type: str) -> tuple[str, str]:
     templates = {
-        'light_reminder': ('Quick nudge', 'You missed a baseline day. Reset and protect today.'),
-        'direct_reminder': ('Discipline warning', 'Two missed days in a row. Recommit today.'),
-        'checkin_required': ('Check-in required', 'Three missed days. Open the app and recommit.'),
-        'cooldown': ('Cooldown', 'You are in cooldown. We will reduce reminder frequency.'),
-        'cooldown_notice': ('Cooldown', 'You are in cooldown. We will reduce reminder frequency.'),
-        'recommit_prompt': ('Recommit prompt', 'Inactivity detected. Restart your sprint today.'),
+        'light_reminder': ('You have been off track', 'You have not been on track the past few days. Try adjusting the plan so it fits again.'),
+        'direct_reminder': ('You have been off track', 'You have not been on track the past few days. Try resetting your sprint or adjusting the daily targets.'),
+        'checkin': ('Check in today', 'You have not been on track for the past few days. Try resetting your sprint or changing the daily targets.'),
+        'reset_prompt': ('Start again today', 'You have been inactive for a while. Start again from today if the current sprint no longer fits.'),
         'weekly_review_ready': ('Weekly review ready', 'Your weekly review is ready to read.'),
     }
     return templates.get(reminder_type, ('Reminder', 'Open the app for your check-in.'))

@@ -20,6 +20,7 @@ def create_user(db: Session, *, email: str, hashed_password: str, name: str | No
         email=email,
         hashed_password=hashed_password,
         name=name,
+        goal_context=None,
         timezone='UTC',
         tone_preference='direct',
         sprint_mode_enabled=False,
@@ -36,6 +37,7 @@ def update_user_profile(
     *,
     user: User,
     name: str | None = None,
+    goal_context: str | None = None,
     timezone: str | None = None,
     tone_preference: str | None = None,
     sprint_mode_enabled: bool | None = None,
@@ -45,6 +47,8 @@ def update_user_profile(
 ) -> User:
     if name is not None:
         user.name = name
+    if goal_context is not None:
+        user.goal_context = goal_context
     if timezone is not None:
         user.timezone = timezone
     if tone_preference is not None:

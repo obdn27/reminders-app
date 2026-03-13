@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../theme/theme';
 
 export default function PrimaryButton({
@@ -6,6 +7,9 @@ export default function PrimaryButton({
   onPress,
   variant = 'primary',
   disabled = false,
+  style,
+  labelStyle,
+  icon,
 }) {
   return (
     <Pressable
@@ -17,28 +21,40 @@ export default function PrimaryButton({
         variant === 'danger' ? styles.danger : null,
         pressed ? styles.pressed : null,
         disabled ? styles.disabled : null,
+        style,
       ]}
     >
-      <Text
-        style={[
-          styles.label,
-          variant === 'secondary' ? styles.secondaryLabel : styles.primaryLabel,
-        ]}
-      >
-        {title}
-      </Text>
+      <View style={styles.content}>
+        {icon ? (
+          <MaterialCommunityIcons
+            name={icon}
+            size={18}
+            color={variant === 'secondary' ? theme.colors.textPrimary : theme.colors.surface}
+          />
+        ) : null}
+        <Text
+          style={[
+            styles.label,
+            variant === 'secondary' ? styles.secondaryLabel : styles.primaryLabel,
+            labelStyle,
+          ]}
+        >
+          {title}
+        </Text>
+      </View>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: 12,
+    borderRadius: theme.radius.pill,
     paddingVertical: 12,
     paddingHorizontal: 16,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
+    minHeight: 48,
   },
   primary: {
     backgroundColor: theme.colors.primary,
@@ -53,8 +69,7 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.danger,
   },
   label: {
-    fontSize: 16,
-    fontWeight: '600',
+    ...theme.typography.label,
   },
   primaryLabel: {
     color: theme.colors.surface,
@@ -67,5 +82,11 @@ const styles = StyleSheet.create({
   },
   disabled: {
     opacity: 0.5,
+  },
+  content: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.spacing.sm,
   },
 });

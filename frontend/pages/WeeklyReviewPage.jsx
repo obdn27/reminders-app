@@ -1,11 +1,12 @@
 import { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Card from '../components/Card';
-import PrimaryButton from '../components/PrimaryButton';
+import ReviewRing from '../components/ReviewRing';
 import SecondaryButton from '../components/SecondaryButton';
 import ScreenContainer from '../components/ScreenContainer';
+import { formatDateParam } from '../services/timeMachine';
 import { useWeeklyReview } from '../state/WeeklyReviewContext';
-import { generateWeeklyReview } from '../services/api';
+import { useDebugTime } from '../state/DebugTimeContext';
 import { theme } from '../theme/theme';
 import { goBackOrNavigateHome } from '../utils/navigation';
 
@@ -16,24 +17,15 @@ export default function WeeklyReviewPage({ navigation }) {
     refreshLatestWeeklyReview,
     refreshWeeklyReviewHistory,
   } = useWeeklyReview();
+  const { nowDate } = useDebugTime();
+  const asOfDate = formatDateParam(nowDate);
 
   useEffect(() => {
     refreshLatestWeeklyReview();
     refreshWeeklyReviewHistory();
-  }, []);
+  }, [asOfDate]);
 
   const review = latestWeeklyReview;
-  const today = new Date();
-  const dayIndex = today.getDay();
-  const mondayOffset = dayIndex === 0 ? -6 : 1 - dayIndex;
-  const start = new Date(today);
-  start.setDate(today.getDate() + mondayOffset);
-  const end = new Date(start);
-  end.setDate(start.getDate() + 6);
-  const thisWeekStart = start.toISOString().slice(0, 10);
-  const thisWeekEnd = end.toISOString().slice(0, 10);
-  const hasCurrentWeekReview =
-    review?.weekStartDate === thisWeekStart && review?.weekEndDate === thisWeekEnd;
 
   return (
     <ScreenContainer>
@@ -41,6 +33,9 @@ export default function WeeklyReviewPage({ navigation }) {
         <Text style={styles.title}>Weekly review</Text>
         {review ? (
           <>
+            <View style={styles.ringWrap}>
+              <ReviewRing value={review.daysGoalsMet} total={7} />
+            </View>
             <Text style={styles.metric}>
               Week: {review.weekStartDate} to {review.weekEndDate}
             </Text>
@@ -67,17 +62,6 @@ export default function WeeklyReviewPage({ navigation }) {
           </View>
         </Card>
       ) : null}
-
-      {!hasCurrentWeekReview ? (
-        <PrimaryButton
-          title="Generate this week's review"
-          onPress={async () => {
-            await generateWeeklyReview();
-            await refreshLatestWeeklyReview();
-            await refreshWeeklyReviewHistory();
-          }}
-        />
-      ) : null}
       <SecondaryButton title="Return home" onPress={() => goBackOrNavigateHome(navigation)} />
     </ScreenContainer>
   );
@@ -86,6 +70,7 @@ export default function WeeklyReviewPage({ navigation }) {
 const styles = StyleSheet.create({
   card: { gap: 10 },
   title: { fontSize: 22, fontWeight: '700', color: theme.colors.textPrimary },
+  ringWrap: { alignItems: 'center', marginBottom: 6 },
   metric: { color: theme.colors.textPrimary, fontSize: 16, fontWeight: '600' },
   summary: { marginTop: 4, color: theme.colors.textSecondary, fontSize: 15, lineHeight: 22 },
   historyList: { gap: 6 },

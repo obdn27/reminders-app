@@ -1,10 +1,8 @@
-from datetime import date
-
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.db import get_db
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, get_request_target_date
 from app.schemas.daily_progress import PatchTodayProgressRequest
 from app.services.daily_progress_service import (
     get_progress_history,
@@ -17,7 +15,7 @@ router = APIRouter(prefix='/daily-progress', tags=['daily-progress'])
 
 @router.get('/today')
 def get_today_progress_route(
-    as_of_date: date | None = Query(default=None, alias='asOfDate'),
+    as_of_date=Depends(get_request_target_date),
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -28,7 +26,7 @@ def get_today_progress_route(
 @router.patch('/today')
 def patch_today_progress_route(
     payload: PatchTodayProgressRequest,
-    as_of_date: date | None = Query(default=None, alias='asOfDate'),
+    as_of_date=Depends(get_request_target_date),
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -38,7 +36,7 @@ def patch_today_progress_route(
 
 @router.post('/complete-job-task')
 def complete_job_task_route(
-    as_of_date: date | None = Query(default=None, alias='asOfDate'),
+    as_of_date=Depends(get_request_target_date),
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -50,7 +48,7 @@ def complete_job_task_route(
 @router.get('/history')
 def daily_progress_history_route(
     limit: int = Query(default=30, ge=1, le=180),
-    as_of_date: date | None = Query(default=None, alias='asOfDate'),
+    as_of_date=Depends(get_request_target_date),
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):

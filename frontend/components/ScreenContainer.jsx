@@ -1,20 +1,25 @@
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '../theme/theme';
 
 export default function ScreenContainer({ children, scroll = true }) {
+  const insets = useSafeAreaInsets();
+
   return (
-    <SafeAreaView style={styles.safeArea} edges={['right', 'left', 'bottom']}>
+    <SafeAreaView style={styles.safeArea} edges={['right', 'left']}>
       {scroll ? (
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 40 }]}
           contentInsetAdjustmentBehavior="never"
           automaticallyAdjustContentInsets={false}
+          showsVerticalScrollIndicator={false}
         >
           {children}
         </ScrollView>
       ) : (
-        <View style={styles.content}>{children}</View>
+        <View style={[styles.content, { paddingBottom: insets.bottom + theme.spacing.lg }]}>
+          {children}
+        </View>
       )}
     </SafeAreaView>
   );
@@ -26,13 +31,12 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
   },
   scrollContent: {
-    padding: 16,
-    gap: 12,
-    paddingBottom: 40,
+    padding: theme.spacing.lg,
+    gap: theme.spacing.md,
   },
   content: {
     flex: 1,
-    padding: 16,
-    gap: 12,
+    padding: theme.spacing.lg,
+    gap: theme.spacing.md,
   },
 });

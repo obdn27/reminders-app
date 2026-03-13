@@ -4,8 +4,11 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { AnchorsProvider } from './state/AnchorsContext';
+import { AnchorProgressProvider } from './state/AnchorProgressContext';
 import { DebugTimeProvider } from './state/DebugTimeContext';
 import { DailyGoalsProvider } from './state/DailyGoalsContext';
+import { OnboardingProvider } from './state/OnboardingContext';
 import { ProfileProvider } from './state/ProfileContext';
 import { ReminderProvider } from './state/ReminderContext';
 import { SessionProvider } from './state/SessionContext';
@@ -17,9 +20,14 @@ import WelcomePage from './pages/WelcomePage';
 import SignInPage from './pages/SignInPage';
 import SignUpPage from './pages/SignUpPage';
 
-import OnboardingDisciplinePage from './pages/OnboardingDisciplinePage';
-import OnboardingMinimumsPage from './pages/OnboardingMinimumsPage';
-import OnboardingSprintSetupPage from './pages/OnboardingSprintSetupPage';
+import OnboardingAnchorSelectionPage from './pages/OnboardingAnchorSelectionPage';
+import OnboardingAnchorTargetPage from './pages/OnboardingAnchorTargetPage';
+import OnboardingFirstActionPage from './pages/OnboardingFirstActionPage';
+import OnboardingGoalContextPage from './pages/OnboardingGoalContextPage';
+import OnboardingIntroPage from './pages/OnboardingIntroPage';
+import OnboardingReminderTimesPage from './pages/OnboardingReminderTimesPage';
+import OnboardingSummaryPage from './pages/OnboardingSummaryPage';
+import OnboardingTonePage from './pages/OnboardingTonePage';
 import HomePage from './pages/HomePage';
 import StartFocusSessionPage from './pages/StartFocusSessionPage';
 import StartMovementSessionPage from './pages/StartMovementSessionPage';
@@ -30,6 +38,7 @@ import DailyReviewPage from './pages/DailyReviewPage';
 import WeeklyReviewPage from './pages/WeeklyReviewPage';
 import AdjustmentSuggestionPage from './pages/AdjustmentSuggestionPage';
 import SettingsPage from './pages/SettingsPage';
+import AccountPage from './pages/AccountPage';
 import HistoryPage from './pages/HistoryPage';
 import HowItWorksPage from './pages/HowItWorksPage';
 import DebugToolsPage from './pages/DebugToolsPage';
@@ -41,6 +50,10 @@ const navTheme = {
   colors: {
     ...DefaultTheme.colors,
     background: theme.colors.background,
+    card: theme.colors.background,
+    text: theme.colors.textPrimary,
+    border: theme.colors.border,
+    primary: theme.colors.primary,
   },
 };
 
@@ -78,13 +91,19 @@ function AppProviders({ children }) {
   return (
     <ProfileProvider>
       <DailyGoalsProvider>
-        <TodayProgressProvider>
-          <ReminderProvider>
-            <WeeklyReviewProvider>
-              <SessionProvider>{children}</SessionProvider>
-            </WeeklyReviewProvider>
-          </ReminderProvider>
-        </TodayProgressProvider>
+        <AnchorsProvider>
+          <OnboardingProvider>
+            <AnchorProgressProvider>
+              <TodayProgressProvider>
+                <ReminderProvider>
+                  <WeeklyReviewProvider>
+                    <SessionProvider>{children}</SessionProvider>
+                  </WeeklyReviewProvider>
+                </ReminderProvider>
+              </TodayProgressProvider>
+            </AnchorProgressProvider>
+          </OnboardingProvider>
+        </AnchorsProvider>
       </DailyGoalsProvider>
     </ProfileProvider>
   );
@@ -92,30 +111,23 @@ function AppProviders({ children }) {
 
 function AppStack() {
   const { user } = useAuth();
-  const initialRouteName = user?.hasCompletedOnboarding ? 'Home' : 'OnboardingDiscipline';
+  const initialRouteName = user?.hasCompletedOnboarding ? 'Home' : 'OnboardingIntro';
 
   return (
     <AppProviders>
       <Stack.Navigator initialRouteName={initialRouteName} screenOptions={sharedScreenOptions}>
-        <Stack.Screen
-          name="OnboardingDiscipline"
-          component={OnboardingDisciplinePage}
-          options={{ title: 'Discipline Setup' }}
-        />
-        <Stack.Screen
-          name="OnboardingMinimums"
-          component={OnboardingMinimumsPage}
-          options={{ title: 'Minimum Standards' }}
-        />
-        <Stack.Screen
-          name="OnboardingSprintSetup"
-          component={OnboardingSprintSetupPage}
-          options={{ title: 'Sprint Setup' }}
-        />
+        <Stack.Screen name="OnboardingIntro" component={OnboardingIntroPage} options={{ title: 'Setup' }} />
+        <Stack.Screen name="OnboardingGoalContext" component={OnboardingGoalContextPage} options={{ title: 'Setup' }} />
+        <Stack.Screen name="OnboardingAnchorSelection" component={OnboardingAnchorSelectionPage} options={{ title: 'Setup' }} />
+        <Stack.Screen name="OnboardingAnchorTargets" component={OnboardingAnchorTargetPage} options={{ title: 'Setup' }} />
+        <Stack.Screen name="OnboardingReminderTimes" component={OnboardingReminderTimesPage} options={{ title: 'Setup' }} />
+        <Stack.Screen name="OnboardingTone" component={OnboardingTonePage} options={{ title: 'Setup' }} />
+        <Stack.Screen name="OnboardingSummary" component={OnboardingSummaryPage} options={{ title: 'Setup' }} />
+        <Stack.Screen name="OnboardingFirstAction" component={OnboardingFirstActionPage} options={{ title: 'Ready' }} />
         <Stack.Screen
           name="Home"
           component={HomePage}
-          options={{ title: 'Home', headerBackVisible: false }}
+          options={{ headerShown: false, headerBackVisible: false }}
         />
         <Stack.Screen
           name="StartFocusSession"
@@ -127,7 +139,11 @@ function AppStack() {
           component={StartMovementSessionPage}
           options={{ title: 'Start Movement Session' }}
         />
-        <Stack.Screen name="ActiveSession" component={ActiveSessionPage} options={{ title: 'Active Session' }} />
+        <Stack.Screen
+          name="ActiveSession"
+          component={ActiveSessionPage}
+          options={{ headerShown: false }}
+        />
         <Stack.Screen name="SessionComplete" component={SessionCompletePage} options={{ title: 'Session Complete' }} />
         <Stack.Screen
           name="MovementCheckIn"
@@ -145,6 +161,7 @@ function AppStack() {
           options={{ title: 'Adjustment Suggestion' }}
         />
         <Stack.Screen name="Settings" component={SettingsPage} options={{ title: 'Settings' }} />
+        <Stack.Screen name="Account" component={AccountPage} options={{ title: 'Account' }} />
       </Stack.Navigator>
     </AppProviders>
   );
@@ -165,7 +182,7 @@ export default function App() {
     <DebugTimeProvider>
       <AuthProvider>
         <NavigationContainer theme={navTheme}>
-          <StatusBar style="dark" />
+          <StatusBar style="light" />
           <RootNavigator />
         </NavigationContainer>
       </AuthProvider>

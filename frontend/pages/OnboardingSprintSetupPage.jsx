@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Card from '../components/Card';
 import PrimaryButton from '../components/PrimaryButton';
 import ScreenContainer from '../components/ScreenContainer';
+import { formatDateParam } from '../services/timeMachine';
 import { useDailyGoals } from '../state/DailyGoalsContext';
 import { useDebugTime } from '../state/DebugTimeContext';
 import { useProfile } from '../state/ProfileContext';
@@ -61,8 +62,8 @@ export default function OnboardingSprintSetupPage({ navigation, route }) {
       await updateProfile({
         tonePreference: tone,
         sprintModeEnabled: true,
-        sprintStartDate: start.toISOString().slice(0, 10),
-        sprintEndDate: end.toISOString().slice(0, 10),
+        sprintStartDate: formatDateParam(start),
+        sprintEndDate: formatDateParam(end),
         hasCompletedOnboarding: true,
       });
 

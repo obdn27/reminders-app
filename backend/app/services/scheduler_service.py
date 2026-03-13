@@ -20,14 +20,6 @@ def _with_db(fn):
         db.close()
 
 
-def _normalize_reminder_type(rule_state: str | None) -> str | None:
-    if not rule_state:
-        return None
-    if rule_state == 'cooldown':
-        return 'cooldown_notice'
-    return rule_state
-
-
 def daily_evaluation_job():
     def _run(db: Session):
         users = list_users(db)
@@ -35,12 +27,11 @@ def daily_evaluation_job():
             target_date = user_local_date(user.timezone)
             result = evaluate_progress_for_date(db, user=user, target_date=target_date)
             reminder_state = result['ruleState'].get('reminderState')
-            reminder_type = _normalize_reminder_type(reminder_state)
-            if reminder_type:
+            if reminder_state:
                 create_reminder_if_needed(
                     db,
                     user=user,
-                    reminder_type=reminder_type,
+                    reminder_type=reminder_state,
                     target_date=target_date,
                 )
 
@@ -69,7 +60,7 @@ def inactivity_recommit_job():
             create_reminder_if_needed(
                 db,
                 user=user,
-                reminder_type='recommit_prompt',
+                reminder_type='reset_prompt',
                 target_date=target_date,
             )
 

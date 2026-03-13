@@ -10,6 +10,7 @@ class UserResponse(BaseModel):
     id: int
     email: str
     name: Optional[str] = None
+    goalContext: Optional[str] = None
     timezone: str
     tonePreference: str
     sprintModeEnabled: bool

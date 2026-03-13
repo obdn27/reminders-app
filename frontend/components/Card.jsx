@@ -7,15 +7,11 @@ export default function Card({ children, style }) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: 14,
-    padding: 14,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.xl,
+    padding: theme.spacing.lg,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    shadowColor: theme.colors.textPrimary,
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
+    ...theme.shadows.card,
   },
 });

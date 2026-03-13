@@ -10,19 +10,22 @@ import { theme } from '../theme/theme';
 import { goBackOrNavigateHome } from '../utils/navigation';
 
 export default function DailyReviewPage({ navigation }) {
-  const { ruleState, recommit, refreshTodayProgress } = useTodayProgress();
+  const { ruleState, resetFromToday, refreshTodayProgress } = useTodayProgress();
   const { refreshLatestReminder } = useReminders();
   const [working, setWorking] = useState(false);
 
   const message = ruleState?.reminderState
-    ? `Current reminder state: ${ruleState.reminderState}. Miss streak: ${ruleState.missStreak}.`
-    : 'No active missed-day event. Quick reset for tomorrow.';
-  const shouldShowRecommit = Boolean(ruleState?.reminderState) || (ruleState?.missStreak || 0) > 0;
+    ? `Stability: ${ruleState.stabilityState}. Reminder: ${ruleState.reminderState}. Miss streak: ${ruleState.missStreak}.`
+    : `Stability: ${ruleState?.stabilityState || 'stable'}. No active intervention right now.`;
+  const shouldShowReset = ['checkin', 'reset_prompt'].includes(
+    ruleState?.reminderState || ''
+  );
+  const actionTitle = ruleState?.reminderState === 'reset_prompt' ? 'Start again today' : 'Reset from today';
 
-  const handleRecommit = async () => {
+  const handleReset = async () => {
     setWorking(true);
     try {
-      await recommit();
+      await resetFromToday();
       await refreshTodayProgress();
       await refreshLatestReminder();
       goBackOrNavigateHome(navigation);
@@ -36,10 +39,11 @@ export default function DailyReviewPage({ navigation }) {
       <Card style={styles.card}>
         <Text style={styles.title}>Daily review</Text>
         <Text style={styles.message}>{message}</Text>
+        <Text style={styles.meta}>Today looks {ruleState?.dailyClassification || 'stable'}.</Text>
 
         <View style={styles.options}>
-          {shouldShowRecommit ? (
-            <PrimaryButton title={working ? 'Recommitting...' : 'Recommit'} onPress={handleRecommit} disabled={working} />
+          {shouldShowReset ? (
+            <PrimaryButton title={working ? 'Updating...' : actionTitle} onPress={handleReset} disabled={working} />
           ) : null}
           <SecondaryButton title="Adjust later" onPress={() => goBackOrNavigateHome(navigation)} />
           <SecondaryButton title="Dismiss" onPress={() => goBackOrNavigateHome(navigation)} />
@@ -53,5 +57,6 @@ const styles = StyleSheet.create({
   card: { gap: 12 },
   title: { fontSize: 22, fontWeight: '700', color: theme.colors.textPrimary },
   message: { color: theme.colors.textSecondary, fontSize: 16, lineHeight: 24 },
+  meta: { color: theme.colors.textMuted, fontSize: 14, lineHeight: 20 },
   options: { gap: 8 },
 });

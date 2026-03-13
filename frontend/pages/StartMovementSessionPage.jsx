@@ -40,7 +40,12 @@ export default function StartMovementSessionPage({ navigation }) {
   const start = () => {
     const safeDuration = Math.min(180, Math.max(1, Number(duration) || 20));
 
-    startMovementSession({ category, durationMinutes: safeDuration });
+    startMovementSession({
+      anchorType: 'movement',
+      title: 'Movement',
+      category,
+      durationMinutes: safeDuration,
+    });
     navigation.navigate('ActiveSession');
   };
 

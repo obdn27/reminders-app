@@ -25,12 +25,11 @@ const styles = StyleSheet.create({
     gap: theme.spacing.xs,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '700',
+    ...theme.typography.title,
     color: theme.colors.textPrimary,
   },
   subtitle: {
-    fontSize: 14,
-    color: theme.colors.textMuted,
+    ...theme.typography.bodySm,
+    color: theme.colors.textSecondary,
   },
 });

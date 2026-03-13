@@ -11,6 +11,7 @@ class User(Base):
     hashed_password = Column(String(255), nullable=False)
     name = Column(String(255), nullable=True)
     timezone = Column(String(128), nullable=False, default='UTC')
+    goal_context = Column(String(64), nullable=True)
 
     tone_preference = Column(String(32), nullable=False, default='direct')
     sprint_mode_enabled = Column(Boolean, nullable=False, default=False)

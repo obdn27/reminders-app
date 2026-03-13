@@ -3,10 +3,13 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
 import Card from '../components/Card';
+import HistoryLineGraph from '../components/HistoryLineGraph';
 import PrimaryButton from '../components/PrimaryButton';
 import ScreenContainer from '../components/ScreenContainer';
 import SectionHeader from '../components/SectionHeader';
 import { getDailyProgressHistory } from '../services/api';
+import { formatDateParam } from '../services/timeMachine';
+import { useDailyGoals } from '../state/DailyGoalsContext';
 import { useDebugTime } from '../state/DebugTimeContext';
 import { theme } from '../theme/theme';
 import { goBackOrNavigateHome } from '../utils/navigation';
@@ -20,14 +23,24 @@ function statusLabel(status) {
 
 export default function HistoryPage({ navigation }) {
   const { nowDate } = useDebugTime();
+  const { dailyGoals, fetchDailyGoals } = useDailyGoals();
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const asOfDate = formatDateParam(nowDate);
 
   const load = async () => {
     setLoading(true);
+    setError('');
     try {
+      if (!dailyGoals) {
+        await fetchDailyGoals();
+      }
       const result = await getDailyProgressHistory(30);
       setHistory(result.history || []);
+    } catch (err) {
+      setHistory([]);
+      setError('History could not be loaded right now.');
     } finally {
       setLoading(false);
     }
@@ -36,16 +49,24 @@ export default function HistoryPage({ navigation }) {
   useFocusEffect(
     useCallback(() => {
       load();
-    }, [nowDate])
+    }, [asOfDate])
   );
 
   return (
     <ScreenContainer>
       <SectionHeader
         title="Daily History"
-        subtitle="Last 30 days"
+        subtitle="Sprint days only"
         right={<Text style={styles.meta}>{loading ? 'Loading...' : `${history.length} days`}</Text>}
       />
+
+      <HistoryLineGraph history={history} dailyGoals={dailyGoals} />
+
+      {error ? (
+        <Card>
+          <Text style={styles.empty}>{error}</Text>
+        </Card>
+      ) : null}
 
       {history.map((item) => (
         <Card key={item.id} style={styles.rowCard}>
@@ -59,7 +80,7 @@ export default function HistoryPage({ navigation }) {
         </Card>
       ))}
 
-      {!loading && history.length === 0 ? (
+      {!loading && !error && history.length === 0 ? (
         <Card>
           <Text style={styles.empty}>No history yet. Complete a session to start tracking.</Text>
         </Card>

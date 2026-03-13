@@ -36,6 +36,22 @@ export function setDebugEnabled(enabled) {
   emit();
 }
 
+export function setAbsoluteDebugTime(dateLike) {
+  const nextDate = new Date(dateLike);
+  state.offsetMs = nextDate.getTime() - Date.now();
+  state.debugEnabled = true;
+  emit();
+}
+
+export function applyRemoteDebugSnapshot(snapshot) {
+  if (!snapshot?.effectiveNow) {
+    return;
+  }
+  state.debugEnabled = Boolean(snapshot.fakeEnabled);
+  state.offsetMs = new Date(snapshot.effectiveNow).getTime() - Date.now();
+  emit();
+}
+
 export function setTimerSpeed(speed) {
   state.timerSpeed = clampTimerSpeed(speed);
   emit();
@@ -48,8 +64,9 @@ export function resetTimeDebug() {
   emit();
 }
 
-export function advanceTime({ minutes = 0, hours = 0, days = 0 } = {}) {
+export function advanceTime({ minutes = 0, hours = 0, days = 0, seconds = 0 } = {}) {
   const deltaMs =
+    (Number(seconds) || 0) * 1000 +
     (Number(minutes) || 0) * 60 * 1000 +
     (Number(hours) || 0) * 60 * 60 * 1000 +
     (Number(days) || 0) * 24 * 60 * 60 * 1000;
@@ -71,6 +88,13 @@ export function getNowIso() {
   return new Date(getNowMs()).toISOString();
 }
 
+export function formatDateParam(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export function getTimerSpeed() {
   return state.debugEnabled ? state.timerSpeed : 1;
 }
@@ -79,5 +103,5 @@ export function getAsOfDateParam() {
   if (!state.debugEnabled) {
     return null;
   }
-  return getNowIso().slice(0, 10);
+  return formatDateParam(getNowDate());
 }

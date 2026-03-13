@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
 import BottomSheetPicker from './BottomSheetPicker';
-import { theme } from '../theme/theme';
+import { SettingsRow } from './SettingsRow';
 
 export default function EditablePickerField({
   label,
@@ -9,6 +8,7 @@ export default function EditablePickerField({
   onChange,
   items,
   getLabel,
+  isLast = false,
 }) {
   const [visible, setVisible] = useState(false);
 
@@ -19,15 +19,13 @@ export default function EditablePickerField({
 
   return (
     <>
-      <View style={styles.row}>
-        <View style={styles.textWrap}>
-          <Text style={styles.label}>{label}</Text>
-          <Text style={styles.value}>{valueLabel}</Text>
-        </View>
-        <Pressable style={styles.editBtn} onPress={() => setVisible(true)}>
-          <Text style={styles.editText}>Edit</Text>
-        </Pressable>
-      </View>
+      <SettingsRow
+        label={label}
+        value={valueLabel}
+        onPress={() => setVisible(true)}
+        showChevron
+        isLast={isLast}
+      />
 
       <BottomSheetPicker
         visible={visible}
@@ -41,45 +39,3 @@ export default function EditablePickerField({
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  row: {
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.lg,
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: theme.spacing.md,
-  },
-  textWrap: {
-    flex: 1,
-    gap: 4,
-  },
-  label: {
-    fontSize: 13,
-    color: theme.colors.textMuted,
-    fontWeight: '600',
-  },
-  value: {
-    fontSize: 16,
-    color: theme.colors.textPrimary,
-    fontWeight: '700',
-  },
-  editBtn: {
-    borderWidth: 1,
-    borderColor: theme.colors.borderSoft,
-    borderRadius: theme.radius.pill,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    backgroundColor: theme.colors.primarySoft,
-  },
-  editText: {
-    color: theme.colors.primaryDark,
-    fontWeight: '700',
-    fontSize: 13,
-  },
-});
