@@ -1,15 +1,13 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Card from '../components/Card';
-import CompletionTrendCard from '../components/CompletionTrendCard';
 import IconAction from '../components/IconAction';
 import PrimaryButton from '../components/PrimaryButton';
 import ProgressRow from '../components/ProgressRow';
 import SectionHeader from '../components/SectionHeader';
-import { getAnchorProgressHistory } from '../services/api';
 import { formatDateParam } from '../services/timeMachine';
 import { GOAL_CONTEXT_OPTIONS } from '../data/anchorCatalog';
 import { useAnchors } from '../state/AnchorsContext';
@@ -45,44 +43,67 @@ function getAnchorSummary(anchors) {
   return `${incomplete.length} anchors still need attention today.`;
 }
 
-function SessionActionBar({ anchors, navigation }) {
-  if (!anchors.length) {
+function ActionGridCard({ anchors, navigation, onManualAction }) {
+  const actionableAnchors = anchors.filter((anchor) => !anchor.completed || anchor.trackingType === 'session');
+
+  if (!actionableAnchors.length) {
     return null;
   }
 
   return (
-    <View style={styles.stickyWrap}>
-      <View style={styles.stickyBar}>
-        {anchors.map((anchor) => {
-          const isMovement = anchor.anchorType === 'movement';
-          const routeName = isMovement ? 'StartMovementSession' : 'StartFocusSession';
-          const buttonTitle =
-            anchor.anchorType === 'movement' ? 'Start move session' : `Start ${anchor.title.toLowerCase()}`;
+    <View style={styles.actionsGrid}>
+      {actionableAnchors.map((anchor) => {
+        const isMovement = anchor.anchorType === 'movement';
+        const isSession = anchor.trackingType === 'session';
+        const routeName = isMovement ? 'StartMovementSession' : 'StartFocusSession';
+        let buttonTitle = '';
 
-          return (
-            <PrimaryButton
-              key={anchor.anchorId}
-              title={buttonTitle}
-              icon={isMovement ? 'run-fast' : 'timer-outline'}
-              onPress={() =>
-                navigation.navigate(routeName, {
-                  anchorType: anchor.anchorType,
-                  anchorTitle: anchor.title,
-                  defaultDuration: anchor.targetUnit === 'minutes' ? anchor.targetValue : 30,
-                })
+        if (isSession) {
+          buttonTitle = anchor.anchorType === 'movement' ? 'Movement' : anchor.title;
+        } else {
+          buttonTitle = anchor.trackingType === 'count' ? `${anchor.title} +1` : anchor.title;
+        }
+
+        return (
+          <Pressable
+            key={anchor.anchorId}
+            onPress={() => {
+              if (!isSession) {
+                onManualAction(anchor);
+                return;
               }
-              style={styles.stickyActionButton}
-              labelStyle={styles.stickyActionLabel}
+
+              navigation.navigate(routeName, {
+                anchorType: anchor.anchorType,
+                anchorTitle: anchor.title,
+                defaultDuration: anchor.targetUnit === 'minutes' ? anchor.targetValue : 30,
+              });
+            }}
+            style={({ pressed }) => [
+              styles.actionTile,
+              isSession ? styles.actionTilePrimary : styles.actionTileSecondary,
+              pressed ? styles.actionTilePressed : null,
+            ]}
+          >
+            <MaterialCommunityIcons
+              name={
+                isSession
+                  ? isMovement
+                    ? 'run-fast'
+                    : 'timer-outline'
+                  : anchor.trackingType === 'count'
+                    ? 'plus'
+                    : 'check'
+              }
+              size={18}
+              color={isSession ? theme.colors.primaryDark : theme.colors.textPrimary}
             />
-          );
-        })}
-      </View>
-      <LinearGradient
-        pointerEvents="none"
-        colors={[theme.colors.background, 'rgba(15, 17, 23, 0.82)', 'rgba(15, 17, 23, 0)']}
-        locations={[0, 0.45, 1]}
-        style={styles.stickyFade}
-      />
+            <Text style={[styles.actionText, isSession ? styles.actionTextPrimary : styles.actionTextSecondary]}>
+              {buttonTitle}
+            </Text>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
@@ -92,19 +113,16 @@ export default function HomePage({ navigation }) {
   const { nowDate } = useDebugTime();
   const asOfDate = formatDateParam(nowDate);
   const { profile } = useProfile();
-  const { anchors, fetchAnchors } = useAnchors();
+  const { fetchAnchors } = useAnchors();
   const { todayAnchors, refreshTodayAnchors, saveAnchorProgress } = useAnchorProgress();
   const { latestReminder, refreshLatestReminder, openReminder } = useReminders();
   const { ruleState, refreshTodayProgress } = useTodayProgress();
-  const [trendHistory, setTrendHistory] = useState([]);
 
   const loadHome = useCallback(async () => {
     await fetchAnchors();
     await refreshTodayAnchors();
     await refreshTodayProgress();
     await refreshLatestReminder();
-    const trendResult = await getAnchorProgressHistory(7);
-    setTrendHistory(trendResult.history || []);
   }, [asOfDate]);
 
   useEffect(() => {
@@ -138,7 +156,6 @@ export default function HomePage({ navigation }) {
   const activeReminder = hasDismissedTodayReminder ? null : currentReminder || ruleState;
   const goalContextTitle =
     GOAL_CONTEXT_OPTIONS.find((item) => item.value === profile?.goalContext)?.title || 'Current sprint';
-  const sessionAnchors = anchorItems.filter((anchor) => anchor.trackingType === 'session');
 
   const handleManualAnchor = async (anchor) => {
     if (anchor.trackingType === 'count') {
@@ -157,7 +174,6 @@ export default function HomePage({ navigation }) {
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <ScrollView
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 40 }]}
-        stickyHeaderIndices={sessionAnchors.length ? [1] : []}
         contentInsetAdjustmentBehavior="never"
         automaticallyAdjustContentInsets={false}
         showsVerticalScrollIndicator={false}
@@ -176,7 +192,7 @@ export default function HomePage({ navigation }) {
           </View>
         </Card>
 
-        <SessionActionBar anchors={sessionAnchors} navigation={navigation} />
+        <ActionGridCard anchors={anchorItems} navigation={navigation} onManualAction={handleManualAnchor} />
 
         <Card style={styles.goalsCard}>
           <SectionHeader title="Today's Anchors" />
@@ -190,14 +206,6 @@ export default function HomePage({ navigation }) {
                   total={anchor.targetValue}
                   suffix={anchor.targetUnit === 'minutes' ? ' min' : ''}
                 />
-                {anchor.trackingType !== 'session' && !anchor.completed ? (
-                  <PrimaryButton
-                    variant="secondary"
-                    title={anchor.trackingType === 'count' ? 'Add 1' : 'Mark complete'}
-                    onPress={() => handleManualAnchor(anchor)}
-                    style={styles.inlineAction}
-                  />
-                ) : null}
               </View>
             ))}
           </View>
@@ -214,9 +222,6 @@ export default function HomePage({ navigation }) {
             />
           </Card>
         ) : null}
-
-        <CompletionTrendCard history={trendHistory} />
-
         <Card style={styles.toolsCard}>
           <SectionHeader title="Tools" />
           <View style={styles.toolsRow}>
@@ -287,34 +292,47 @@ const styles = StyleSheet.create({
     color: theme.colors.primaryDark,
     textTransform: 'uppercase',
   },
-  stickyWrap: {
-    backgroundColor: theme.colors.background,
-    paddingTop: theme.spacing.sm,
-    paddingBottom: theme.spacing.lg,
-  },
-  stickyBar: {
+  actionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: theme.spacing.sm,
-    backgroundColor: theme.colors.background,
   },
-  stickyFade: {
-    position: 'absolute',
-    left: -theme.spacing.lg,
-    right: -theme.spacing.lg,
-    bottom: -theme.spacing.md,
-    height: 28,
+  actionTile: {
+    width: '48%',
+    minHeight: 64,
+    borderRadius: theme.radius.lg,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm + 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    gap: theme.spacing.sm,
+    borderWidth: 1,
   },
-  stickyActionButton: {
-    minWidth: '48%',
-    flexGrow: 1,
-    paddingVertical: 14,
-    minHeight: 60,
+  actionTilePrimary: {
     backgroundColor: theme.colors.primary,
     borderColor: theme.colors.primary,
   },
-  stickyActionLabel: {
-    ...theme.typography.label,
+  actionTileSecondary: {
+    backgroundColor: theme.colors.surfaceElevated,
+    borderColor: theme.colors.borderSoft,
+  },
+  actionTilePressed: {
+    opacity: 0.9,
+  },
+  actionText: {
+    ...theme.typography.bodySm,
+    lineHeight: 18,
+    flex: 1,
+    textAlign: 'center',
+  },
+  actionTextPrimary: {
+    color: theme.colors.textPrimary,
+    fontWeight: '700',
+  },
+  actionTextSecondary: {
+    color: theme.colors.textPrimary,
+    fontWeight: '600',
   },
   goalsCard: {
     gap: theme.spacing.sm,
@@ -329,12 +347,6 @@ const styles = StyleSheet.create({
   },
   anchorRowWrap: {
     gap: theme.spacing.sm,
-  },
-  inlineAction: {
-    alignSelf: 'flex-start',
-    minHeight: 40,
-    paddingVertical: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.md,
   },
   statusCard: {
     backgroundColor: theme.colors.warningSoft,

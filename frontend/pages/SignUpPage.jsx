@@ -43,6 +43,8 @@ export default function SignUpPage({ navigation }) {
 
         <TextInput
           placeholder="Name (optional)"
+          placeholderTextColor={theme.colors.textMuted}
+          selectionColor={theme.colors.primaryDark}
           value={name}
           onChangeText={setName}
           style={styles.input}
@@ -52,6 +54,8 @@ export default function SignUpPage({ navigation }) {
           autoCapitalize="none"
           keyboardType="email-address"
           placeholder="Email"
+          placeholderTextColor={theme.colors.textMuted}
+          selectionColor={theme.colors.primaryDark}
           value={email}
           onChangeText={setEmail}
           style={styles.input}
@@ -60,6 +64,8 @@ export default function SignUpPage({ navigation }) {
         <TextInput
           secureTextEntry
           placeholder="Password (min 8 chars)"
+          placeholderTextColor={theme.colors.textMuted}
+          selectionColor={theme.colors.primaryDark}
           value={password}
           onChangeText={setPassword}
           style={styles.input}
@@ -96,7 +102,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.surfaceElevated,
+    color: theme.colors.textPrimary,
     fontSize: 16,
   },
   error: {

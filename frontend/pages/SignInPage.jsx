@@ -41,6 +41,8 @@ export default function SignInPage({ navigation }) {
           autoCapitalize="none"
           keyboardType="email-address"
           placeholder="Email"
+          placeholderTextColor={theme.colors.textMuted}
+          selectionColor={theme.colors.primaryDark}
           value={email}
           onChangeText={setEmail}
           style={styles.input}
@@ -49,6 +51,8 @@ export default function SignInPage({ navigation }) {
         <TextInput
           secureTextEntry
           placeholder="Password"
+          placeholderTextColor={theme.colors.textMuted}
+          selectionColor={theme.colors.primaryDark}
           value={password}
           onChangeText={setPassword}
           style={styles.input}
@@ -85,7 +89,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.surfaceElevated,
+    color: theme.colors.textPrimary,
     fontSize: 16,
   },
   error: {

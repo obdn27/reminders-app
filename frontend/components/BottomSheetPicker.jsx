@@ -67,7 +67,6 @@ export default function BottomSheetPicker({
             </View>
 
             <View style={styles.wheelFrame}>
-              <View pointerEvents="none" style={styles.selectionBand} />
               <Picker
                 selectedValue={draftValue}
                 onValueChange={setDraftValue}
@@ -151,18 +150,6 @@ const styles = StyleSheet.create({
     height: 208,
     justifyContent: 'center',
     overflow: 'hidden',
-  },
-  selectionBand: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: '50%',
-    marginTop: -25,
-    height: 50,
-    borderRadius: theme.radius.lg,
-    backgroundColor: theme.colors.pickerSelection,
-    borderWidth: 1,
-    borderColor: theme.colors.borderSoft,
   },
   picker: {
     width: '100%',

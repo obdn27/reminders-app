@@ -29,6 +29,7 @@ def get_latest_weekly_review_route(
             user=current_user,
             week_start_date=week_start_date,
             week_end_date=week_end_date,
+            target_date=target_date,
         )
     }
 
@@ -51,5 +52,6 @@ def generate_weekly_review_route(
         user=current_user,
         week_start_date=week_start_date,
         week_end_date=week_end_date,
+        target_date=target_date,
     )
     return {'review': review}

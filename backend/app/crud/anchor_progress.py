@@ -13,6 +13,24 @@ def get_anchor_progress_rows(db: Session, *, user_id: int, target_date: date) ->
     )
 
 
+def get_anchor_progress_rows_in_range(
+    db: Session,
+    *,
+    user_id: int,
+    start_date: date,
+    end_date: date,
+) -> list[DailyAnchorProgress]:
+    return (
+        db.query(DailyAnchorProgress)
+        .filter(
+            DailyAnchorProgress.user_id == user_id,
+            DailyAnchorProgress.date >= start_date,
+            DailyAnchorProgress.date <= end_date,
+        )
+        .all()
+    )
+
+
 def get_anchor_progress_row(
     db: Session,
     *,
