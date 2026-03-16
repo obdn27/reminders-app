@@ -17,6 +17,7 @@ from app.models.reminder_event import ReminderEvent
 from app.models.session import SessionRecord
 from app.models.user import User
 from app.models.weekly_review import WeeklyReview
+from app.services.anchor_catalog import get_anchor_config
 from app.services.daily_progress_service import evaluate_progress_for_date
 
 UTC = timezone.utc
@@ -76,21 +77,42 @@ def ensure_user(db, *, email: str, name: str, start_date: date, goal_context: st
 
 
 def set_anchors(db, *, user: User, anchors: list[dict]):
-    replace_daily_anchors(db, user_id=user.id, anchors=anchors)
+    normalized_anchors = []
+    for anchor in anchors:
+        category = anchor.get('category') or anchor.get('anchorType')
+        config = get_anchor_config(category) or {}
+        normalized_anchors.append(
+            {
+                'id': anchor.get('id'),
+                'category': category,
+                'label': anchor.get('label') or config.get('title') or category.replace('_', ' ').title(),
+                'anchorType': category,
+                'targetValue': anchor['targetValue'],
+                'targetUnit': anchor.get('targetUnit') or config.get('target_unit'),
+                'trackingType': anchor.get('trackingType') or config.get('tracking_type'),
+                'reminderTime': anchor.get('reminderTime'),
+                'nextAnchorId': anchor.get('nextAnchorId'),
+                'active': anchor.get('active', True),
+            }
+        )
+
+    replace_daily_anchors(db, user_id=user.id, anchors=normalized_anchors)
     job_work_minutes = sum(
         anchor['targetValue']
-        for anchor in anchors
+        for anchor in normalized_anchors
         if anchor['anchorType'] in {'deep_work', 'upskilling'} and anchor['targetUnit'] == 'minutes'
     )
     movement_minutes = next(
         (
             anchor['targetValue']
-            for anchor in anchors
+            for anchor in normalized_anchors
             if anchor['anchorType'] == 'movement' and anchor['targetUnit'] == 'minutes'
         ),
         0,
     )
-    daily_task_enabled = any(anchor['anchorType'] in {'job_applications', 'chores_admin', 'meals_cooking'} for anchor in anchors)
+    daily_task_enabled = any(
+        anchor['anchorType'] in {'job_applications', 'chores_admin', 'meals_cooking'} for anchor in normalized_anchors
+    )
     upsert_daily_goals(
         db,
         user_id=user.id,
@@ -231,7 +253,7 @@ def seed_inactive_account(db):
 
 def seed_recovering_account(db):
     start = date(2026, 2, 16)
-    user = ensure_user(db, email='recovering.rhea@gmail.com', name='Recovering Rhea', start_date=start)
+    user = ensure_user(db, email='pranavpasula@gmail.com', name='Pranav', start_date=start)
     set_anchors(
         db,
         user=user,
@@ -270,7 +292,7 @@ def main():
             'fragile.flow@gmail.com',
             'drifting.dan@gmail.com',
             'inactive.ian@gmail.com',
-            'recovering.rhea@gmail.com',
+            'pranavpasula@gmail.com',
         ]:
             print(f'  - {email} / {PASSWORD}')
     finally:

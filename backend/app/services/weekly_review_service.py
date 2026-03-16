@@ -14,7 +14,6 @@ from app.crud.weekly_reviews import (
 )
 from app.services.llm_service import generate_weekly_summary_template
 from app.models.user import User
-from app.services.anchor_catalog import get_anchor_config
 from app.utils.time import previous_week_range
 
 
@@ -52,11 +51,10 @@ def _build_anchor_breakdown(db: Session, *, user: User, week_start_date: date, w
 
     breakdown = []
     for anchor in anchors:
-        config = get_anchor_config(anchor.anchor_type) or {}
         breakdown.append(
             {
                 'anchorId': anchor.id,
-                'label': config.get('title', anchor.anchor_type.replace('_', ' ').title()),
+                'label': anchor.label,
                 'daysMet': completion_by_anchor.get(anchor.id, 0),
                 'totalDays': 7,
             }

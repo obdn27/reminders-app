@@ -51,6 +51,23 @@ export const theme = {
     title: { fontSize: 18, fontWeight: '700' },
     hero: { fontSize: 24, fontWeight: '800' },
   },
+  forms: {
+    inputLabel: {
+      fontSize: 14,
+      color: '#9DA7B3',
+      fontWeight: '600',
+    },
+    input: {
+      borderWidth: 1,
+      borderColor: '#323947',
+      borderRadius: 10,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      backgroundColor: '#1B2230',
+      color: '#E6EDF3',
+      fontSize: 16,
+    },
+  },
   shadows: {
     card: {
       shadowColor: '#000000',

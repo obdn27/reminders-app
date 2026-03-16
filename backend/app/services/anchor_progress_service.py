@@ -22,15 +22,19 @@ def _time_to_string(value) -> str | None:
 
 def _row_to_response(anchor, row):
     config = get_anchor_config(anchor.anchor_type) or {}
-    title = config.get('title', anchor.anchor_type.replace('_', ' ').title())
+    title = anchor.label or config.get('title', anchor.anchor_type.replace('_', ' ').title())
     return {
         'anchorId': anchor.id,
+        'category': anchor.category,
+        'label': anchor.label,
         'anchorType': anchor.anchor_type,
         'title': title,
         'trackingType': anchor.tracking_type,
         'targetValue': anchor.target_value,
         'targetUnit': anchor.target_unit,
         'reminderTime': _time_to_string(anchor.reminder_time),
+        'nextAnchorId': anchor.next_anchor_id,
+        'nextAnchorLabel': None,
         'progressValue': row.progress_value if row else 0,
         'completed': row.completed if row else False,
     }
@@ -47,7 +51,12 @@ def get_today_anchor_progress(db: Session, *, user: User, target_date: date | No
     target_date = target_date or user_local_date(user.timezone)
     anchors = [anchor for anchor in get_daily_anchors(db, user.id) if anchor.active]
     rows = {row.anchor_id: row for row in get_anchor_progress_rows(db, user_id=user.id, target_date=target_date)}
-    items = [_row_to_response(anchor, rows.get(anchor.id)) for anchor in anchors]
+    label_by_id = {anchor.id: anchor.label for anchor in anchors}
+    items = []
+    for anchor in anchors:
+        item = _row_to_response(anchor, rows.get(anchor.id))
+        item['nextAnchorLabel'] = label_by_id.get(anchor.next_anchor_id)
+        items.append(item)
 
     completed_anchors = sum(1 for item in items if item['completed'])
     return {

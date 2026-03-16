@@ -29,8 +29,10 @@ export const ANCHOR_CATALOG = [
   {
     type: 'deep_work',
     title: 'Deep work',
+    shortTitle: 'Deep work',
     description: 'Protected concentration time.',
     icon: 'timer-outline',
+    trackingType: 'session',
     targetUnit: 'minutes',
     defaultTarget: 60,
     targetOptions: Array.from({ length: 19 }, (_, index) => (index + 2) * 15),
@@ -39,8 +41,10 @@ export const ANCHOR_CATALOG = [
   {
     type: 'job_applications',
     title: 'Job applications',
+    shortTitle: 'Applications',
     description: 'A fixed number of applications or outreach actions.',
     icon: 'send-outline',
+    trackingType: 'count',
     targetUnit: 'count',
     defaultTarget: 2,
     targetOptions: [1, 2, 3, 4, 5],
@@ -49,8 +53,10 @@ export const ANCHOR_CATALOG = [
   {
     type: 'upskilling',
     title: 'Upskilling',
+    shortTitle: 'Upskilling',
     description: 'Practice, learn, or review something useful every day.',
     icon: 'book-outline',
+    trackingType: 'session',
     targetUnit: 'minutes',
     defaultTarget: 30,
     targetOptions: Array.from({ length: 12 }, (_, index) => (index + 1) * 15),
@@ -59,8 +65,10 @@ export const ANCHOR_CATALOG = [
   {
     type: 'movement',
     title: 'Movement',
+    shortTitle: 'Movement',
     description: 'Keep your body in the loop so the rest does not collapse.',
     icon: 'run-fast',
+    trackingType: 'session',
     targetUnit: 'minutes',
     defaultTarget: 20,
     targetOptions: Array.from({ length: 12 }, (_, index) => (index + 1) * 10),
@@ -69,8 +77,10 @@ export const ANCHOR_CATALOG = [
   {
     type: 'chores_admin',
     title: 'Chores / Admin',
+    shortTitle: 'Chores',
     description: 'Keep the small practical tasks from quietly piling up.',
     icon: 'clipboard-check-outline',
+    trackingType: 'boolean',
     targetUnit: 'completion',
     defaultTarget: 1,
     targetOptions: [1],
@@ -79,12 +89,26 @@ export const ANCHOR_CATALOG = [
   {
     type: 'meals_cooking',
     title: 'Meals / Cooking',
+    shortTitle: 'Meals',
     description: 'A basic meal or cooking anchor that supports the rest of the sprint.',
     icon: 'silverware-fork-knife',
+    trackingType: 'boolean',
     targetUnit: 'completion',
     defaultTarget: 1,
     targetOptions: [1],
     defaultReminderTime: '18:00',
+  },
+  {
+    type: 'planning',
+    title: 'Planning',
+    shortTitle: 'Planning',
+    description: 'A brief reset to decide what matters before the day drifts.',
+    icon: 'notebook-outline',
+    trackingType: 'boolean',
+    targetUnit: 'completion',
+    defaultTarget: 1,
+    targetOptions: [1],
+    defaultReminderTime: '08:30',
   },
 ];
 
@@ -117,10 +141,19 @@ export function buildAnchorDraft(anchorType) {
   }
 
   return {
+    id: null,
+    category: definition.type,
     anchorType: definition.type,
+    label: definition.title,
+    trackingType: definition.trackingType,
     targetValue: definition.defaultTarget,
     targetUnit: definition.targetUnit,
     reminderTime: definition.defaultReminderTime,
+    nextAnchorId: null,
     active: true,
   };
+}
+
+export function getAnchorLabel(anchor) {
+  return anchor?.label || getAnchorDefinition(anchor?.category || anchor?.anchorType)?.title || 'Anchor';
 }

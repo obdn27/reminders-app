@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import Card from '../components/Card';
 import EditablePickerField from '../components/EditablePickerField';
+import LabeledInput from '../components/LabeledInput';
 import OnboardingLayout from '../components/OnboardingLayout';
 import PrimaryButton from '../components/PrimaryButton';
 import ScreenContainer from '../components/ScreenContainer';
@@ -41,9 +42,15 @@ export default function OnboardingAnchorTargetPage({ navigation }) {
           return (
             <Card key={anchor.anchorType} style={styles.anchorCard}>
               <View style={styles.cardHeader}>
-                <Text style={styles.anchorTitle}>{definition.title}</Text>
+                <Text style={styles.anchorTitle}>{anchor.label || definition.title}</Text>
+                <Text style={styles.anchorMeta}>{definition.title}</Text>
                 <Text style={styles.anchorDescription}>{definition.description}</Text>
               </View>
+              <LabeledInput
+                label="Custom label"
+                value={anchor.label}
+                onChangeText={(label) => updateAnchorDraft(anchor.anchorType, { label })}
+              />
               {isCompletionOnly ? (
                 <Text style={styles.fixedValue}>Counts as one completion each day.</Text>
               ) : (
@@ -80,9 +87,14 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     lineHeight: 18,
   },
+  anchorMeta: {
+    ...theme.typography.caption,
+    color: theme.colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
   fixedValue: {
     ...theme.typography.label,
     color: theme.colors.textPrimary,
   },
 });
-

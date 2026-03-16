@@ -17,6 +17,7 @@ from app.routes.sessions import router as sessions_router
 from app.routes.users import router as users_router
 from app.routes.weekly_review import router as weekly_review_router
 from app.services.scheduler_service import start_scheduler, stop_scheduler
+from app.services.schema_backfill import ensure_runtime_schema
 
 app = FastAPI(title=settings.APP_NAME, debug=settings.APP_DEBUG)
 
@@ -34,6 +35,7 @@ app.add_middleware(
 @app.on_event('startup')
 def on_startup():
     Base.metadata.create_all(bind=engine)
+    ensure_runtime_schema(engine)
     if settings.SCHEDULER_ENABLED:
         start_scheduler()
 

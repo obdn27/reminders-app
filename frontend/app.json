@@ -12,7 +12,13 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSSupportsLiveActivities": true,
+        "NSSupportsLiveActivitiesFrequentUpdates": false
+      },
+      "entitlements": {},
+      "bundleIdentifier": "com.anonymous.reminders-app"
     },
     "android": {
       "adaptiveIcon": {
@@ -27,7 +33,6 @@
     },
     "plugins": [
       "expo-secure-store",
-      "expo-notifications",
       "expo-dev-client",
       "expo-live-activity"
     ]

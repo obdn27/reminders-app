@@ -13,7 +13,7 @@ export function AnchorsProvider({ children }) {
     try {
       const result = await getAnchors();
       setAnchors(result.anchors || []);
-      await syncAnchorReminderNotifications(result.anchors || []);
+      await syncAnchorReminderNotifications({ anchors: result.anchors || [] });
       return result;
     } finally {
       setLoadingAnchors(false);
@@ -25,7 +25,7 @@ export function AnchorsProvider({ children }) {
     try {
       const result = await updateAnchors(payload);
       setAnchors(result.anchors || []);
-      await syncAnchorReminderNotifications(result.anchors || []);
+      await syncAnchorReminderNotifications({ anchors: result.anchors || [] });
       return result;
     } finally {
       setLoadingAnchors(false);

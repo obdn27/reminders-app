@@ -13,6 +13,8 @@ export default function StartFocusSessionPage({ navigation, route }) {
   const { startFocusSession } = useSessionState();
   const anchorType = route.params?.anchorType || 'deep_work';
   const anchorTitle = route.params?.anchorTitle || 'Deep work';
+  const nextAnchorId = route.params?.nextAnchorId || null;
+  const nextAnchorLabel = route.params?.nextAnchorLabel || null;
   const defaultDuration = route.params?.defaultDuration || (anchorType === 'upskilling' ? 30 : 60);
   const [duration, setDuration] = useState(defaultDuration);
   const durationOptions = Array.from({ length: 48 }, (_, idx) => (idx + 1) * 5);
@@ -22,8 +24,10 @@ export default function StartFocusSessionPage({ navigation, route }) {
     startFocusSession({
       anchorType,
       title: anchorTitle,
-      category: anchorTitle.toLowerCase(),
+      category: anchorType,
       durationMinutes: safeDuration,
+      nextAnchorId,
+      nextAnchorLabel,
     });
     navigation.navigate('ActiveSession');
   };

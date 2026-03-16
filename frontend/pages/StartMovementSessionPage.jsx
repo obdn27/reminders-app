@@ -29,9 +29,12 @@ function SelectRow({ values, selected, onSelect }) {
   );
 }
 
-export default function StartMovementSessionPage({ navigation }) {
+export default function StartMovementSessionPage({ navigation, route }) {
   const { startMovementSession } = useSessionState();
   const { dailyGoals } = useDailyGoals();
+  const anchorTitle = route.params?.anchorTitle || 'Movement';
+  const nextAnchorId = route.params?.nextAnchorId || null;
+  const nextAnchorLabel = route.params?.nextAnchorLabel || null;
 
   const [category, setCategory] = useState('walk');
   const [duration, setDuration] = useState(dailyGoals?.movementMinutesGoal || 20);
@@ -42,9 +45,11 @@ export default function StartMovementSessionPage({ navigation }) {
 
     startMovementSession({
       anchorType: 'movement',
-      title: 'Movement',
+      title: anchorTitle,
       category,
       durationMinutes: safeDuration,
+      nextAnchorId,
+      nextAnchorLabel,
     });
     navigation.navigate('ActiveSession');
   };
@@ -52,7 +57,7 @@ export default function StartMovementSessionPage({ navigation }) {
   return (
     <ScreenContainer>
       <Card style={styles.card}>
-        <Text style={styles.title}>Start movement session</Text>
+        <Text style={styles.title}>Start {anchorTitle.toLowerCase()} session</Text>
 
         <Text style={styles.label}>Type</Text>
         <SelectRow values={categories} selected={category} onSelect={setCategory} />
@@ -69,7 +74,7 @@ export default function StartMovementSessionPage({ navigation }) {
         />
       </Card>
 
-      <PrimaryButton title="Start movement session" onPress={start} />
+      <PrimaryButton title={`Start ${anchorTitle.toLowerCase()}`} onPress={start} />
     </ScreenContainer>
   );
 }

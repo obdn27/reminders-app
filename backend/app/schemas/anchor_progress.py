@@ -6,12 +6,16 @@ from pydantic import BaseModel, Field
 
 class AnchorProgressItemResponse(BaseModel):
     anchorId: int
+    category: str
+    label: str
     anchorType: str
     title: str
     trackingType: Literal['session', 'count', 'boolean']
     targetValue: int
     targetUnit: str
     reminderTime: str | None = None
+    nextAnchorId: int | None = None
+    nextAnchorLabel: str | None = None
     progressValue: int
     completed: bool
 

@@ -5,6 +5,8 @@ import Svg, { Circle } from 'react-native-svg';
 import PrimaryButton from '../components/PrimaryButton';
 import { createSession } from '../services/api';
 import { endSessionLiveActivity, startSessionLiveActivity, updateSessionLiveActivity } from '../services/liveActivities';
+import { syncAnchorReminderNotifications } from '../services/notifications';
+import { useAnchors } from '../state/AnchorsContext';
 import { useAnchorProgress } from '../state/AnchorProgressContext';
 import { useDebugTime } from '../state/DebugTimeContext';
 import { useReminders } from '../state/ReminderContext';
@@ -12,6 +14,7 @@ import { getNowIso, getNowMs, getTimerSpeed } from '../services/timeMachine';
 import { useSessionState } from '../state/SessionContext';
 import { useTodayProgress } from '../state/TodayProgressContext';
 import { theme } from '../theme/theme';
+import { getNextUpSuggestion } from '../utils/anchors';
 import { goBackOrNavigateHome } from '../utils/navigation';
 
 function formatTime(seconds) {
@@ -65,8 +68,9 @@ function TimerRing({ progress = 0, children }) {
 export default function ActiveSessionPage({ navigation }) {
   const { activeSession, abandonActiveSession, completeActiveSession, setLastSessionResult } =
     useSessionState();
-  const { applyAnchorProgress, refreshTodayAnchors } = useAnchorProgress();
-  const { applySessionResult, refreshTodayProgress } = useTodayProgress();
+  const { anchors } = useAnchors();
+  const { todayAnchors, applyAnchorProgress, refreshTodayAnchors } = useAnchorProgress();
+  const { applySessionResult, refreshTodayProgress, ruleState } = useTodayProgress();
   const { refreshLatestReminder } = useReminders();
   const { timerSpeed } = useDebugTime();
 
@@ -99,6 +103,12 @@ export default function ActiveSessionPage({ navigation }) {
 
   useEffect(() => {
     if (!activeSession) return undefined;
+    syncAnchorReminderNotifications({
+      anchors,
+      todayAnchors: todayAnchors?.anchors || [],
+      activeSession,
+      retentionState: ruleState?.retentionState,
+    }).catch(() => {});
     startSessionLiveActivity({
       category: activeSession.category,
       type: activeSession.type,
@@ -107,7 +117,7 @@ export default function ActiveSessionPage({ navigation }) {
     return () => {
       endSessionLiveActivity();
     };
-  }, [activeSession]);
+  }, [activeSession, anchors, todayAnchors?.anchors, ruleState?.retentionState]);
 
   if (!activeSession) {
     return (
@@ -156,21 +166,31 @@ export default function ActiveSessionPage({ navigation }) {
       applySessionResult(result);
       applyAnchorProgress(result.anchorProgress);
       await refreshTodayProgress();
-      await refreshTodayAnchors();
+      const refreshedAnchors = await refreshTodayAnchors();
       await refreshLatestReminder();
+      const nextSuggestion = getNextUpSuggestion(refreshedAnchors?.anchors || result?.anchorProgress?.anchors || []);
+      await syncAnchorReminderNotifications({
+        anchors,
+        todayAnchors: refreshedAnchors?.anchors || result?.anchorProgress?.anchors || [],
+        activeSession: null,
+        retentionState: result?.ruleState?.retentionState || ruleState?.retentionState,
+      });
       setLastSessionResult({
         ...draft,
         type: result?.session?.type || draft.type,
         anchorType: result?.session?.anchorType || draft.anchorType,
+        title: result?.session?.label || draft.title,
         category: result?.session?.category || draft.category,
         plannedMinutes: result?.session?.plannedMinutes || draft.plannedMinutes,
         completedMinutes: result?.session?.completedMinutes || draft.completedMinutes,
+        nextAnchorId: nextSuggestion?.anchorId || null,
+        nextAnchorLabel: nextSuggestion?.label || null,
       });
     } catch (error) {
       // keep optimistic local result
     }
 
-    goBackOrNavigateHome(navigation);
+    navigation.replace('SessionComplete');
   };
 
   const onAbandon = () => {
@@ -183,7 +203,7 @@ export default function ActiveSessionPage({ navigation }) {
       <View style={styles.container}>
         <View style={styles.sessionMeta}>
           <Text style={styles.title}>{sessionLabel}</Text>
-          <Text style={styles.category}>{String(activeSession.category || '').toUpperCase()}</Text>
+          <Text style={styles.category}>{String(activeSession.title || activeSession.category || '').toUpperCase()}</Text>
         </View>
 
         <View style={styles.centerStage}>

@@ -5,7 +5,7 @@ import OnboardingLayout from '../components/OnboardingLayout';
 import OnboardingSummaryRow from '../components/OnboardingSummaryRow';
 import PrimaryButton from '../components/PrimaryButton';
 import ScreenContainer from '../components/ScreenContainer';
-import { GOAL_CONTEXT_OPTIONS, TONE_OPTIONS, getAnchorDefinition } from '../data/anchorCatalog';
+import { GOAL_CONTEXT_OPTIONS, TONE_OPTIONS, getAnchorDefinition, getAnchorLabel } from '../data/anchorCatalog';
 import { formatReminderTime } from '../data/reminderTimes';
 import { formatDateParam } from '../services/timeMachine';
 import { requestNotificationPermissions } from '../services/notifications';
@@ -20,12 +20,12 @@ function buildAnchorSummary(anchor) {
   const definition = getAnchorDefinition(anchor.anchorType);
   if (!definition) return '';
   if (anchor.targetUnit === 'minutes') {
-    return `${definition.title}: ${anchor.targetValue} min at ${formatReminderTime(anchor.reminderTime)}`;
+    return `${getAnchorLabel(anchor)}: ${anchor.targetValue} min at ${formatReminderTime(anchor.reminderTime)}`;
   }
   if (anchor.targetUnit === 'count') {
-    return `${definition.title}: ${anchor.targetValue}/day at ${formatReminderTime(anchor.reminderTime)}`;
+    return `${getAnchorLabel(anchor)}: ${anchor.targetValue}/day at ${formatReminderTime(anchor.reminderTime)}`;
   }
-  return `${definition.title}: daily completion at ${formatReminderTime(anchor.reminderTime)}`;
+  return `${getAnchorLabel(anchor)}: daily completion at ${formatReminderTime(anchor.reminderTime)}`;
 }
 
 export default function OnboardingSummaryPage({ navigation }) {
@@ -88,8 +88,8 @@ export default function OnboardingSummaryPage({ navigation }) {
           {selectedAnchorDrafts.map((anchor, index) => (
             <OnboardingSummaryRow
               key={anchor.anchorType}
-              label={getAnchorDefinition(anchor.anchorType)?.title || anchor.anchorType}
-              value={buildAnchorSummary(anchor).replace(`${getAnchorDefinition(anchor.anchorType)?.title}: `, '')}
+              label={getAnchorLabel(anchor)}
+              value={buildAnchorSummary(anchor).replace(`${getAnchorLabel(anchor)}: `, '')}
               isLast={index === selectedAnchorDrafts.length - 1}
             />
           ))}

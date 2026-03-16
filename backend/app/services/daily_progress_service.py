@@ -4,6 +4,7 @@ from types import SimpleNamespace
 from sqlalchemy.orm import Session
 
 from app.crud.daily_goals import get_daily_goals
+from app.crud.anchor_progress import get_anchor_progress_rows
 from app.crud.daily_progress import (
     create_or_get_daily_progress,
     get_earliest_daily_progress_date,
@@ -71,6 +72,11 @@ def _to_progress_response(progress, *, metrics: dict | None = None):
         'driftFlags': _split_flags(progress.drift_flags),
         'missStreak': progress.miss_streak,
         'completionRate': metrics.get('completionRate', 0),
+        'completedAnchorsToday': metrics.get('completedAnchorsToday', 0),
+        'consistencyStreak': metrics.get('consistencyStreak', 0),
+        'longestStreak': metrics.get('longestStreak', 0),
+        'lastActiveDate': metrics.get('lastActiveDate'),
+        'retentionState': metrics.get('retentionState', 'steady'),
         'createdAt': progress.created_at,
         'updatedAt': progress.updated_at,
     }
@@ -84,6 +90,11 @@ def _to_rule_state(
     missStreak: int,
     driftFlags: list[str],
     completionRate: int,
+    consistencyStreak: int,
+    longestStreak: int,
+    lastActiveDate: date | None,
+    retentionState: str,
+    **_,
 ):
     return {
         'dailyClassification': dailyClassification,
@@ -92,6 +103,10 @@ def _to_rule_state(
         'missStreak': missStreak,
         'driftFlags': driftFlags,
         'completionRate': completionRate,
+        'consistencyStreak': consistencyStreak,
+        'longestStreak': longestStreak,
+        'lastActiveDate': lastActiveDate,
+        'retentionState': retentionState,
     }
 
 
@@ -236,6 +251,9 @@ def _build_rule_metrics(
     reference_date: date,
 ):
     discipline = get_or_create_discipline_state(db, user.id)
+    completed_anchors_today = sum(
+        1 for row in get_anchor_progress_rows(db, user_id=user.id, target_date=reference_date) if row.completed
+    )
     anchor_date = _parse_anchor(discipline.drift_flags)
     recent = get_recent_daily_progress(db, user.id, days=14, reference_date=reference_date)
     scoped_recent = [row for row in recent if anchor_date is None or row.date > anchor_date]
@@ -272,6 +290,19 @@ def _build_rule_metrics(
         miss_streak=miss_streak,
         drift_flags=drift_flags,
     )
+    if completed_anchors_today > 0:
+        if discipline.last_active_date != reference_date:
+            gap_days = (reference_date - discipline.last_active_date).days if discipline.last_active_date else None
+            if gap_days is not None and gap_days > 1:
+                discipline.consistency_streak = 1
+            else:
+                discipline.consistency_streak = max(1, discipline.consistency_streak + 1)
+            discipline.longest_streak = max(discipline.longest_streak, discipline.consistency_streak)
+            discipline.last_active_date = reference_date
+    elif discipline.last_active_date and (reference_date - discipline.last_active_date).days > 1:
+        discipline.consistency_streak = 0
+
+    discipline.retention_state = 'drifting' if miss_streak >= 3 else 'steady'
 
     today_progress.miss_streak = miss_streak
     today_progress.reminder_state = reminder_state
@@ -299,6 +330,11 @@ def _build_rule_metrics(
         'missStreak': miss_streak,
         'driftFlags': drift_flags,
         'completionRate': completion_rate,
+        'completedAnchorsToday': completed_anchors_today,
+        'consistencyStreak': discipline.consistency_streak,
+        'longestStreak': discipline.longest_streak,
+        'lastActiveDate': discipline.last_active_date,
+        'retentionState': discipline.retention_state,
     }
 
 
@@ -427,6 +463,7 @@ def reset_discipline_state(db: Session, *, user: User, target_date: date | None 
     discipline.miss_streak = 0
     discipline.reminder_state = None
     discipline.drift_flags = _merge_anchor_and_flags(target_date, [])
+    discipline.retention_state = 'steady'
     save_discipline_state(db, discipline)
 
     _recompute_counts(row, goals)
@@ -440,6 +477,10 @@ def reset_discipline_state(db: Session, *, user: User, target_date: date | None 
         missStreak=0,
         driftFlags=[],
         completionRate=0,
+        consistencyStreak=discipline.consistency_streak,
+        longestStreak=discipline.longest_streak,
+        lastActiveDate=discipline.last_active_date,
+        retentionState=discipline.retention_state,
     )
 
     return {

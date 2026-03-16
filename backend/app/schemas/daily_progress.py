@@ -10,6 +10,10 @@ class RuleStateResponse(BaseModel):
     missStreak: int
     driftFlags: list[str]
     completionRate: int
+    consistencyStreak: int = 0
+    longestStreak: int = 0
+    lastActiveDate: date | None = None
+    retentionState: str = 'steady'
 
 
 class DailyProgressResponse(BaseModel):
@@ -28,6 +32,11 @@ class DailyProgressResponse(BaseModel):
     driftFlags: list[str]
     missStreak: int
     completionRate: int = 0
+    completedAnchorsToday: int = 0
+    consistencyStreak: int = 0
+    longestStreak: int = 0
+    lastActiveDate: date | None = None
+    retentionState: str = 'steady'
     createdAt: datetime
     updatedAt: datetime
 

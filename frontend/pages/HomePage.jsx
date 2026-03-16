@@ -15,8 +15,11 @@ import { useAnchorProgress } from '../state/AnchorProgressContext';
 import { useDebugTime } from '../state/DebugTimeContext';
 import { useProfile } from '../state/ProfileContext';
 import { useReminders } from '../state/ReminderContext';
+import { useSessionState } from '../state/SessionContext';
 import { useTodayProgress } from '../state/TodayProgressContext';
+import { syncAnchorReminderNotifications } from '../services/notifications';
 import { theme } from '../theme/theme';
+import { getNextUpSuggestion } from '../utils/anchors';
 
 function getReminderState(source) {
   return source?.reminderState || source?.type || null;
@@ -39,7 +42,7 @@ function getSprintDayCount(asOfDate, sprintStartDate) {
 function getAnchorSummary(anchors) {
   const incomplete = anchors.filter((anchor) => !anchor.completed);
   if (!incomplete.length) return 'All anchors are complete.';
-  if (incomplete.length === 1) return `${incomplete[0].title} is left.`;
+  if (incomplete.length === 1) return `${incomplete[0].label} is left.`;
   return `${incomplete.length} anchors still need attention today.`;
 }
 
@@ -59,9 +62,9 @@ function ActionGridCard({ anchors, navigation, onManualAction }) {
         let buttonTitle = '';
 
         if (isSession) {
-          buttonTitle = anchor.anchorType === 'movement' ? 'Movement' : anchor.title;
+          buttonTitle = anchor.label;
         } else {
-          buttonTitle = anchor.trackingType === 'count' ? `${anchor.title} +1` : anchor.title;
+          buttonTitle = anchor.trackingType === 'count' ? `${anchor.label} +1` : anchor.label;
         }
 
         return (
@@ -75,8 +78,10 @@ function ActionGridCard({ anchors, navigation, onManualAction }) {
 
               navigation.navigate(routeName, {
                 anchorType: anchor.anchorType,
-                anchorTitle: anchor.title,
+                anchorTitle: anchor.label,
                 defaultDuration: anchor.targetUnit === 'minutes' ? anchor.targetValue : 30,
+                nextAnchorId: anchor.nextAnchorId,
+                nextAnchorLabel: anchor.nextAnchorLabel,
               });
             }}
             style={({ pressed }) => [
@@ -113,10 +118,11 @@ export default function HomePage({ navigation }) {
   const { nowDate } = useDebugTime();
   const asOfDate = formatDateParam(nowDate);
   const { profile } = useProfile();
-  const { fetchAnchors } = useAnchors();
+  const { anchors, fetchAnchors } = useAnchors();
   const { todayAnchors, refreshTodayAnchors, saveAnchorProgress } = useAnchorProgress();
   const { latestReminder, refreshLatestReminder, openReminder } = useReminders();
-  const { ruleState, refreshTodayProgress } = useTodayProgress();
+  const { activeSession } = useSessionState();
+  const { todayProgress, ruleState, refreshTodayProgress } = useTodayProgress();
 
   const loadHome = useCallback(async () => {
     await fetchAnchors();
@@ -156,6 +162,16 @@ export default function HomePage({ navigation }) {
   const activeReminder = hasDismissedTodayReminder ? null : currentReminder || ruleState;
   const goalContextTitle =
     GOAL_CONTEXT_OPTIONS.find((item) => item.value === profile?.goalContext)?.title || 'Current sprint';
+  const nextSuggestion = getNextUpSuggestion(anchorItems);
+
+  useEffect(() => {
+    syncAnchorReminderNotifications({
+      anchors,
+      todayAnchors: anchorItems,
+      activeSession,
+      retentionState: ruleState?.retentionState,
+    }).catch(() => {});
+  }, [anchors, anchorItems, activeSession, ruleState?.retentionState]);
 
   const handleManualAnchor = async (anchor) => {
     if (anchor.trackingType === 'count') {
@@ -190,6 +206,10 @@ export default function HomePage({ navigation }) {
               <Text style={styles.goalCountLabel}>anchors</Text>
             </View>
           </View>
+          <View style={styles.streakRow}>
+            <Text style={styles.streakLabel}>Consistency streak</Text>
+            <Text style={styles.streakValue}>{todayProgress?.consistencyStreak || ruleState?.consistencyStreak || 0} days</Text>
+          </View>
         </Card>
 
         <ActionGridCard anchors={anchorItems} navigation={navigation} onManualAction={handleManualAnchor} />
@@ -201,7 +221,7 @@ export default function HomePage({ navigation }) {
             {anchorItems.map((anchor) => (
               <View key={anchor.anchorId} style={styles.anchorRowWrap}>
                 <ProgressRow
-                  label={anchor.title}
+                  label={anchor.label}
                   done={anchor.progressValue}
                   total={anchor.targetValue}
                   suffix={anchor.targetUnit === 'minutes' ? ' min' : ''}
@@ -210,6 +230,13 @@ export default function HomePage({ navigation }) {
             ))}
           </View>
         </Card>
+
+        {nextSuggestion ? (
+          <Card style={styles.nextCard}>
+            <SectionHeader title="Next up" subtitle={nextSuggestion.label} />
+            <Text style={styles.goalSummary}>The next incomplete anchor, if you want a gentle handoff.</Text>
+          </Card>
+        ) : null}
 
         {getReminderState(activeReminder) ? (
           <Card style={styles.statusCard}>
@@ -253,6 +280,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: theme.spacing.md,
+  },
+  streakRow: {
+    marginTop: theme.spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+  },
+  streakLabel: {
+    ...theme.typography.bodySm,
+    color: theme.colors.textSecondary,
+  },
+  streakValue: {
+    ...theme.typography.titleSm,
+    color: theme.colors.textPrimary,
   },
   headerTextWrap: {
     flex: 1,
@@ -337,6 +378,9 @@ const styles = StyleSheet.create({
   goalsCard: {
     gap: theme.spacing.sm,
     paddingVertical: theme.spacing.md,
+  },
+  nextCard: {
+    gap: theme.spacing.xs,
   },
   goalSummary: {
     ...theme.typography.bodySm,

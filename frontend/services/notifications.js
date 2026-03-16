@@ -52,22 +52,29 @@ export async function scheduleDebugLocalNotification({
   });
 }
 
-function getAnchorReminderCopy(anchor) {
+function getAnchorReminderCopy(anchor, { retentionState = 'steady' } = {}) {
+  const anchorLabel = anchor.label || anchor.title;
+  if (retentionState === 'drifting') {
+    return {
+      title: `Ready to restart ${anchorLabel}?`,
+      body: "Let's restart with a short session today.",
+    };
+  }
   switch (anchor.anchorType) {
     case 'deep_work':
-      return { title: 'Time to start deep work.', body: 'Protect one focused block.' };
+      return { title: `Time for ${anchorLabel}.`, body: 'Protect one focused block.' };
     case 'upskilling':
-      return { title: 'Upskilling reminder.', body: 'Keep the learning anchor alive today.' };
+      return { title: `${anchorLabel} reminder.`, body: 'Keep the learning anchor alive today.' };
     case 'movement':
-      return { title: 'Time to move.', body: 'A short movement block is enough to keep the anchor alive.' };
+      return { title: `Time for ${anchorLabel}.`, body: 'A short movement block is enough to keep the anchor alive.' };
     case 'job_applications':
-      return { title: 'Job applications reminder.', body: 'Clear at least one application block today.' };
+      return { title: `${anchorLabel} reminder.`, body: 'Clear at least one application block today.' };
     case 'chores_admin':
-      return { title: 'Chores / Admin reminder.', body: 'Clear one practical task before it piles up.' };
+      return { title: `${anchorLabel} reminder.`, body: 'Clear one practical task before it piles up.' };
     case 'meals_cooking':
-      return { title: 'Meals / Cooking reminder.', body: 'Take care of the food anchor today.' };
+      return { title: `${anchorLabel} reminder.`, body: 'Take care of the food anchor today.' };
     default:
-      return { title: `${anchor.title} reminder.`, body: 'Check back into this anchor today.' };
+      return { title: `${anchorLabel} reminder.`, body: 'Check back into this anchor today.' };
   }
 }
 
@@ -80,7 +87,12 @@ async function cancelExistingAnchorNotifications() {
   );
 }
 
-export async function syncAnchorReminderNotifications(anchors = []) {
+export async function syncAnchorReminderNotifications(input = []) {
+  const options = Array.isArray(input) ? { anchors: input } : input;
+  const anchors = options.anchors || [];
+  const todayAnchors = options.todayAnchors || [];
+  const activeSession = options.activeSession || null;
+  const retentionState = options.retentionState || 'steady';
   const settings = await Notifications.getPermissionsAsync();
   const granted =
     settings.granted || settings.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL;
@@ -90,12 +102,34 @@ export async function syncAnchorReminderNotifications(anchors = []) {
 
   await cancelExistingAnchorNotifications();
 
-  const activeAnchors = anchors.filter((anchor) => anchor.active !== false && anchor.reminderTime);
+  const progressByCategory = Object.fromEntries(
+    todayAnchors.map((anchor) => [anchor.category || anchor.anchorType, anchor])
+  );
+  const activeAnchors = anchors.filter((anchor) => {
+    if (anchor.active === false || !anchor.reminderTime) {
+      return false;
+    }
+
+    const progress = progressByCategory[anchor.category || anchor.anchorType];
+    if (progress?.completed) {
+      return false;
+    }
+
+    if (progress?.trackingType === 'session' && progress.progressValue > 0) {
+      return false;
+    }
+
+    if (activeSession?.anchorType && activeSession.anchorType === (anchor.category || anchor.anchorType)) {
+      return false;
+    }
+
+    return true;
+  });
   const scheduledIds = [];
 
   for (const anchor of activeAnchors) {
     const { hour, minute, second } = parseReminderTimeParts(anchor.reminderTime);
-    const copy = getAnchorReminderCopy(anchor);
+    const copy = getAnchorReminderCopy(anchor, { retentionState });
 
     const identifier = await Notifications.scheduleNotificationAsync({
       content: {

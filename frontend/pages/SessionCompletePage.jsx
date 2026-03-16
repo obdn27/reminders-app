@@ -22,7 +22,7 @@ export default function SessionCompletePage({ navigation }) {
         <Text style={styles.title}>Session complete</Text>
         <Text style={styles.copy}>
           Completed {lastSessionResult?.completedMinutes || 0} minutes in{' '}
-          {lastSessionResult?.category || 'session'} ({isMovement ? 'movement' : 'focus'}).
+          {lastSessionResult?.title || lastSessionResult?.category || 'session'} ({isMovement ? 'movement' : 'focus'}).
         </Text>
 
         {isMovement ? (
@@ -42,6 +42,9 @@ export default function SessionCompletePage({ navigation }) {
         )}
 
         <Text style={styles.reinforcement}>Strong close. Keep the baseline alive.</Text>
+        {lastSessionResult?.nextAnchorLabel ? (
+          <Text style={styles.nextUp}>Next up: {lastSessionResult.nextAnchorLabel}</Text>
+        ) : null}
       </Card>
 
       <PrimaryButton title="Return home" onPress={() => goBackOrNavigateHome(navigation)} />
@@ -59,4 +62,5 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, fontWeight: '800', color: theme.colors.textPrimary },
   copy: { color: theme.colors.textSecondary, fontSize: 15, lineHeight: 22 },
   reinforcement: { marginTop: 4, color: theme.colors.textPrimary, fontWeight: '700' },
+  nextUp: { color: theme.colors.textSecondary, fontSize: 14, lineHeight: 20 },
 });

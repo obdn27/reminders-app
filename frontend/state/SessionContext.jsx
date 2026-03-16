@@ -7,24 +7,56 @@ export function SessionProvider({ children }) {
   const [activeSession, setActiveSession] = useState(null);
   const [lastSessionResult, setLastSessionResult] = useState(null);
 
-  const startSession = ({ type, anchorType = null, title = null, category, durationMinutes }) => {
+  const startSession = ({
+    type,
+    anchorType = null,
+    title = null,
+    category,
+    durationMinutes,
+    nextAnchorId = null,
+    nextAnchorLabel = null,
+  }) => {
     const session = {
       type,
       anchorType,
       title,
       category,
       durationMinutes,
+      nextAnchorId,
+      nextAnchorLabel,
       startTimeIso: getNowIso(),
     };
     setActiveSession(session);
     return session;
   };
 
-  const startFocusSession = ({ anchorType = 'deep_work', title = 'Deep work', category, durationMinutes }) =>
-    startSession({ type: 'focus', anchorType, title, category, durationMinutes });
+  const startFocusSession = ({
+    anchorType = 'deep_work',
+    title = 'Deep work',
+    category,
+    durationMinutes,
+    nextAnchorId = null,
+    nextAnchorLabel = null,
+  }) =>
+    startSession({ type: 'focus', anchorType, title, category, durationMinutes, nextAnchorId, nextAnchorLabel });
 
-  const startMovementSession = ({ anchorType = 'movement', title = 'Movement', category, durationMinutes }) =>
-    startSession({ type: 'movement', anchorType, title, category, durationMinutes });
+  const startMovementSession = ({
+    anchorType = 'movement',
+    title = 'Movement',
+    category,
+    durationMinutes,
+    nextAnchorId = null,
+    nextAnchorLabel = null,
+  }) =>
+    startSession({
+      type: 'movement',
+      anchorType,
+      title,
+      category,
+      durationMinutes,
+      nextAnchorId,
+      nextAnchorLabel,
+    });
 
   const abandonActiveSession = () => {
     setActiveSession(null);
@@ -39,6 +71,8 @@ export function SessionProvider({ children }) {
       plannedMinutes: activeSession?.durationMinutes || completedMinutes,
       completedMinutes,
       completedAtIso: getNowIso(),
+      nextAnchorId: activeSession?.nextAnchorId || null,
+      nextAnchorLabel: activeSession?.nextAnchorLabel || null,
     };
     setLastSessionResult(result);
     setActiveSession(null);

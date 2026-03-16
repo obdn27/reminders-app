@@ -14,7 +14,12 @@ function ensureAnchorDrafts(anchorTypes, currentDrafts) {
   const nextDrafts = {};
 
   anchorTypes.forEach((anchorType) => {
-    nextDrafts[anchorType] = currentDrafts[anchorType] || buildAnchorDraft(anchorType);
+    nextDrafts[anchorType] = {
+      ...(buildAnchorDraft(anchorType) || {}),
+      ...(currentDrafts[anchorType] || {}),
+      category: anchorType,
+      anchorType,
+    };
   });
 
   return nextDrafts;
@@ -118,4 +123,3 @@ export function useOnboarding() {
   }
   return context;
 }
-

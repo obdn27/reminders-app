@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import AppTextInput from '../components/AppTextInput';
 import Card from '../components/Card';
 import PrimaryButton from '../components/PrimaryButton';
 import ScreenContainer from '../components/ScreenContainer';
@@ -41,31 +42,25 @@ export default function SignUpPage({ navigation }) {
       <Card style={styles.card}>
         <Text style={styles.title}>Create account</Text>
 
-        <TextInput
+        <AppTextInput
           placeholder="Name (optional)"
-          placeholderTextColor={theme.colors.textMuted}
-          selectionColor={theme.colors.primaryDark}
           value={name}
           onChangeText={setName}
           style={styles.input}
         />
 
-        <TextInput
+        <AppTextInput
           autoCapitalize="none"
           keyboardType="email-address"
           placeholder="Email"
-          placeholderTextColor={theme.colors.textMuted}
-          selectionColor={theme.colors.primaryDark}
           value={email}
           onChangeText={setEmail}
           style={styles.input}
         />
 
-        <TextInput
+        <AppTextInput
           secureTextEntry
           placeholder="Password (min 8 chars)"
-          placeholderTextColor={theme.colors.textMuted}
-          selectionColor={theme.colors.primaryDark}
           value={password}
           onChangeText={setPassword}
           style={styles.input}
@@ -97,14 +92,7 @@ const styles = StyleSheet.create({
     color: theme.colors.textPrimary,
   },
   input: {
-    borderWidth: 1,
-    borderColor: theme.colors.borderSoft,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: theme.colors.surfaceElevated,
-    color: theme.colors.textPrimary,
-    fontSize: 16,
+    ...theme.forms.input,
   },
   error: {
     color: theme.colors.danger,
